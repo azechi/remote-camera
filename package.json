@@ -1,0 +1,11 @@
+{
+  "name": "remote-camera",
+  "version": "0.1.0",
+  "description": "",
+  "main": "",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azechi/remote-camera.git"
+  }
+}
