@@ -1,7 +1,7 @@
 const pc = new RTCPeerConnection();
 
 const mediaConstraints = {
-  video: { facingMode: "user", width: 200, height: 200 }
+  video: { facingMode: "user", aspectRatio: 1 }
 };
 //const mediaConstraints = {audio:true};
 
@@ -30,7 +30,9 @@ const reviver = (_, v) => {
 (async () => {
   // attach stream
   const ms = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-  pc.addTrack(ms.getTracks()[0], ms);
+  const mst = ms.getTracks()[0];
+  mst.applyConstraints({advanced:[{zoom:151}]});
+  pc.addTrack(mst, ms);
 
   // build SDP
   pc.setLocalDescription(await pc.createOffer());
