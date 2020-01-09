@@ -26,7 +26,7 @@ window.onload = async () => {
 
   const auth = await auth0.loggedIn;
 
-  div_status.innerText = "Hub ...";
+  div_status.innerText = "Hub negotiate ...";
 
   await auth.getIdTokenClaims().then(x => x.name).then(console.log);
   
@@ -40,30 +40,31 @@ window.onload = async () => {
 
   const gen = (() =>{
 
-    let value;
     let current_resolve;
     
     let current = new Promise(resolve => {
       current_resolve = resolve;
     } );
    
-    const next = v => {
-      value = v;
-      current_resolve();
+    const next = val => {
+      current_resolve(val);
     };
 
     const gen = async function* () {
       while(true){
-        await current;
-        yield value;
+        const val = await current;
+        yield val;
 
         current = new Promise(resolve => {
           current_resolve = resolve;
         });
       }
-
     };
-    
+      
+    // Promiseが一つだと、connectedで取りこぼす場合がありそう
+    // queueか何かでpromiseを複数持てるようにしたほうがよさげ
+
+
     hub.on("connected", ({from}) => {
       if (!from || from == hub.connectionId) {
         return;
@@ -81,6 +82,38 @@ window.onload = async () => {
 
   div_status.innerText = "Hub connected " + hub.connectionId; 
 
+
+  
+  sendSignalingMessage = to => {
+
+    return async sessionDescription => {
+      console.log(`from [${hub.connectionId}]`,`to [${to}]`,sessionDescription);
+      await sendToHub({
+        Target: 'message',
+        Arguments: [{
+          from: hub.connectionId,
+          sessionDescription: sessionDescription
+        }],
+        ConnectionId: to
+      });
+    };
+
+  };
+
+
+  hub.on('message', async ({from, sessionDescription}) => {
+    
+    const pc = getPeerConnection(from);
+
+    if (sessionDescription.type == 'offer') {
+      // this peer is receiver
+      pc.send = sendSignalingMessage(from);
+    }
+   
+    pc.setRemoteDescription(sessionDescription);
+
+  });
+
   // broadcast
   await sendToHub({
     Target: "connected",
@@ -91,50 +124,16 @@ window.onload = async () => {
 
   // loop
   for await (const peer of gen()) {
-    console.log(peer);
+
+    const p = document.createElement("p");
+    p.innerText = `call from [${peer}]`
+    document.body.appendChild(p);
+
+    // initiate peer connection
+    // this peer is initiator
+    const pc = getPeerConnection(peer);
+    pc.send = sendSignalingMessage(peer);
+    pc.createSignalingDataChannel();
   }
-
-
-  // hub negotiate
-  /*
-  sendSignalingMessage = to => {
-
-    return async sessionDescription => {
-      console.log(`from [${connection.connectionId}]`,`to [${to}]`,sessionDescription);
-      await sendMessageAsync({
-        Target: 'message',
-        Arguments: [{
-          from: connection.connectionId,
-          sessionDescription: sessionDescription
-        }],
-        ConnectionId: to
-      });
-    };
-
-  };
-  
-
-  connection.on("connected", async ({from}) => {
-    if (from && from != connection.connectionId) {
-
-      const pc = getPeerConnection(from);
-      pc.send = sendSignalingMessage(from);
-      pc.createSignalingDataChannel();
-
-    }
-  });
-
-  connection.on('message', async ({from, sessionDescription}) => {
-    
-    const pc = getPeerConnection(from);
-
-    if (sessionDescription.type == 'offer') {
-      pc.send = sendSignalingMessage(from);
-    }
-   
-    pc.setRemoteDescription(sessionDescription);
-
-  });
-
-  */
 };
+
