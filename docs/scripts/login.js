@@ -28,7 +28,7 @@ const auth0 = {
 
     return auth;
 
-  })(window.location, "../auth_config.json")
+  })(window.location, "/auth_config.json")
 
 
 }
