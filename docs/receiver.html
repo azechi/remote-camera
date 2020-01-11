@@ -9,24 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@3.1.0/dist/browser/signalr.min.js"></script>
     <script src="scripts/hubconnection.js"></script>
     <script src="scripts/lanpeerconnection.js"></script>
-    <script type="module" src="scripts/camera.js"></script>
-    <style>
-
-[v-cloak] > *  {
-  display: none;
-}
-
-[v-cloak]::before { 
-  content: "loading...";
-}
-
-    </style>
+    <script type="module" src="scripts/receiver.js"></script>
   </head>
-
   <body>
-    <div id="app" v-cloak>
-      <p>{{ userName }}</p>
-      <p>{{ peerConnectionState }}</p>
-    </div>
   </body>
 </html>

@@ -28,7 +28,7 @@ async function buildHubConnection({serviceUrl, idTokenFactory}) {
     .withUrl(hub_info.url, {
       accessTokenFactory: () => hub_info.accessToken
     })
-    //.configureLogging(signalR.LogLevel.Information)
+    .configureLogging(signalR.LogLevel.Information)
     .build();
 
   return {

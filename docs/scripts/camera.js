@@ -1,119 +1,97 @@
+import Vue from 'https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.esm.browser.js';
 
-const getPeerConnection = (function(init) {
+const app = new Vue({
+  el: "#app",
+  data: {
+    userName: "...",
+    peerConnectionState: ""
+  }
 
-  let map = new Map();
+});
 
-  return key => {
-
-    return map.get(key) 
-      || (() => {
-        const o = init(key);
-        map.set(key, o);
-        return o;
-      })();
-  
-  };
-
-})(()=> new LANPeerConnection());
-
-
-const div_status = document.getElementById("loading");
-
-let h;
-let s;
-
-window.onload = async () => {
+(async () => {
 
   const auth = await auth0.loggedIn;
 
-  div_status.innerText = "Hub negotiate ...";
-
-  await auth.getIdTokenClaims().then(x => x.name).then(console.log);
+  app.userName = await auth.getIdTokenClaims().then(x => x.name);
   
   const {hub, send: sendToHub} = await buildHubConnection({
     serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
     idTokenFactory: () => auth.getIdTokenClaims().then(x => x.__raw)
   });
 
-  h = hub;
-  s = sendToHub;
 
-  const gen = (() =>{
+  const connected = ((app, hub, sendToHub)=> {
 
-    let current_resolve;
-    
-    let current = new Promise(resolve => {
-      current_resolve = resolve;
-    } );
-   
-    const next = val => {
-      current_resolve(val);
-    };
-
-    const gen = async function* () {
-      while(true){
-        const val = await current;
-        yield val;
-
-        current = new Promise(resolve => {
-          current_resolve = resolve;
+    const sendSignalingMessage = to => {
+      return async sessionDescription => {
+        //console.log(`from [${hub.connectionId}]`,`to [${to}]`,sessionDescription);
+        await sendToHub({
+          Target: 'message',
+          Arguments: [{
+            from: hub.connectionId,
+            sessionDescription: sessionDescription
+          }],
+          ConnectionId: to
         });
-      }
+      };
     };
-      
-    // Promiseが一つだと、connectedで取りこぼす場合がありそう
-    // queueか何かでpromiseを複数持てるようにしたほうがよさげ
 
+    let resolveConnected;
+    const connected = new Promise(resolve => {
+      resolveConnected = resolve;
+    });
 
+    const initPeerConnection = from => {
+      const pc = new LANPeerConnection();
+      pc.send = sendSignalingMessage(from);
+
+      const h = () => {
+        if (pc.connectionState == 'connected') {
+          resolveConnected(pc);
+          pc.removeEventListener('connectionstatechange', h);
+        }
+      };
+
+      pc.addEventListener('connectionstatechange', h);
+
+      pc.addEventListener('connectionstatechange', () => {
+        app.peerConnectionState = pc.connectionState;
+      });
+      return pc;
+    };
+
+    let pc;
     hub.on("connected", ({from}) => {
+
       if (!from || from == hub.connectionId) {
         return;
       }
-      
-      next(from);
+
+      // initiator
+      pc = initPeerConnection(from);
+      pc.createSignalingDataChannel();
 
     });
 
-    return gen;
-  })();
+    hub.on('message', async ({from, sessionDescription}) => {
 
-  div_status.innerText = "Hub connecting ...";
+      if (sessionDescription.type == 'offer') {
+        // receiver
+        pc = initPeerConnection(from);
+      }
+
+      pc.setRemoteDescription(sessionDescription);
+
+    });
+
+    return connected;
+  })(app, hub, sendToHub);
+
   await hub.start();
-
-  div_status.innerText = "Hub connected " + hub.connectionId; 
-
-
   
-  sendSignalingMessage = to => {
-
-    return async sessionDescription => {
-      console.log(`from [${hub.connectionId}]`,`to [${to}]`,sessionDescription);
-      await sendToHub({
-        Target: 'message',
-        Arguments: [{
-          from: hub.connectionId,
-          sessionDescription: sessionDescription
-        }],
-        ConnectionId: to
-      });
-    };
-
-  };
-
-
-  hub.on('message', async ({from, sessionDescription}) => {
-    
-    const pc = getPeerConnection(from);
-
-    if (sessionDescription.type == 'offer') {
-      // this peer is receiver
-      pc.send = sendSignalingMessage(from);
-    }
-   
-    pc.setRemoteDescription(sessionDescription);
-
-  });
-
+  console.log("hub connected", hub.connectionId);
+  
   // broadcast
   await sendToHub({
     Target: "connected",
@@ -122,18 +100,9 @@ window.onload = async () => {
     }]
   });
 
-  // loop
-  for await (const peer of gen()) {
+  const pc = await connected;
 
-    const p = document.createElement("p");
-    p.innerText = `call from [${peer}]`
-    document.body.appendChild(p);
 
-    // initiate peer connection
-    // this peer is initiator
-    const pc = getPeerConnection(peer);
-    pc.send = sendSignalingMessage(peer);
-    pc.createSignalingDataChannel();
-  }
-};
+
+})();
 
