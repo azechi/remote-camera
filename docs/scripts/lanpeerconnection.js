@@ -7,6 +7,18 @@ class LANPeerConnection extends RTCPeerConnection {
 
     this.send = async () => {};
 
+    this._signalingDataChannelOpenHandler = ({target}) => {
+
+      this.send = async desc => {
+        target.send(JSON.stringify(desc));
+      }
+
+      target.onmessage = ({data}) => {
+        const o = JSON.parse(data);
+        this.setRemoteDescription(o);
+      };
+    };
+
     // this is triggered by createDataChannel and addTrack call
     this.addEventListener('negotiationneeded', async () => {
       const o = await this.createOffer();
@@ -61,16 +73,7 @@ class LANPeerConnection extends RTCPeerConnection {
     });
   }
 
-  _signalingDataChannelOpenHandler({target}) {
+  
 
-    this.send = async desc => {
-      target.send(JSON.stringify(desc));
-    }
-
-    target.onmessage = ({data}) => {
-      const o = JSON.parse(data);
-      this.setRemoteDescription(o);
-    };
-  }
 }
 

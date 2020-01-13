@@ -21,7 +21,7 @@ const app = new Vue({
   });
 
 
-  const connected = ((app, hub, sendToHub)=> {
+  const connected = ((hub, sendToHub)=> {
 
     const sendSignalingMessage = to => {
       return async sessionDescription => {
@@ -55,9 +55,6 @@ const app = new Vue({
 
       pc.addEventListener('connectionstatechange', h);
 
-      pc.addEventListener('connectionstatechange', () => {
-        app.peerConnectionState = pc.connectionState;
-      });
       return pc;
     };
 
@@ -86,12 +83,11 @@ const app = new Vue({
     });
 
     return connected;
-  })(app, hub, sendToHub);
+  })(hub, sendToHub);
 
   await hub.start();
-  
   console.log("hub connected", hub.connectionId);
-  
+
   // broadcast
   await sendToHub({
     Target: "connected",
@@ -101,8 +97,39 @@ const app = new Vue({
   });
 
   const pc = await connected;
+  app.peerConnectionState = pc.connectionState;
+  await Vue.nextTick();
+
+  // get mediastream
+  const v = document.createElement("video");
+  v.muted = true;
+  v.autoplay = true;
+  v.height = 300;
+  v.width = 300;
+  v.loop = true;
+  v.src = "video.mp4";
+
+  document.body.appendChild(v);
+  // v.load() ???
+
+  console.log("!!!");
+  //await v.play();
 
 
 
+  let stream;
+  v.oncanplay = () => {
+    stream = v.captureStream();
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    console.log("addTrack");
+    v.oncanplay = null;
+  };
+  if(v.readyState >= 3) {
+    stream = v.captureStream();
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    console.log("addTrack");
+    v.oncanplay = null;
+  }
+  
 })();
 

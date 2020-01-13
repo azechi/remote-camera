@@ -1,4 +1,3 @@
-
 (async () => {
 
 
@@ -36,6 +35,113 @@ console.log(idToken);
 // start login session 
 // cookie をもらう
 
+
+/// connect Hub
+
+const {hub, send: sendToHub} = await buildHubConnection({
+  serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
+  // idToken の期限が切れてしまったら？
+  idTokenFactory: () => idToken
+});
+
+const stream = new MediaStream();
+
+
+const connected = ((hub, sendToHub)=> {
+
+    const sendSignalingMessage = to => {
+      return async sessionDescription => {
+        //console.log(`from [${hub.connectionId}]`,`to [${to}]`,sessionDescription);
+        await sendToHub({
+          Target: 'message',
+          Arguments: [{
+            from: hub.connectionId,
+            sessionDescription: sessionDescription
+          }],
+          ConnectionId: to
+        });
+      };
+    };
+
+    let resolveConnected;
+    const connected = new Promise(resolve => {
+      resolveConnected = resolve;
+    });
+
+    const initPeerConnection = from => {
+      const pc = new LANPeerConnection();
+      pc.send = sendSignalingMessage(from);
+
+      pc.ontrack = e => {
+        stream.addTrack(e.track);
+      };
+      
+      const h = () => {
+        if (pc.connectionState == 'connected') {
+          resolveConnected(pc);
+          pc.removeEventListener('connectionstatechange', h);
+        }
+      };
+
+      pc.addEventListener('connectionstatechange', h);
+
+      return pc;
+    };
+
+    let pc;
+    hub.on("connected", ({from}) => {
+
+      if (!from || from == hub.connectionId) {
+        return;
+      }
+
+      // initiator
+      pc = initPeerConnection(from);
+      pc.createSignalingDataChannel();
+
+    });
+
+    hub.on('message', async ({from, sessionDescription}) => {
+
+      if (sessionDescription.type == 'offer') {
+        // receiver
+        pc = initPeerConnection(from);
+      }
+
+      pc.setRemoteDescription(sessionDescription);
+
+    });
+
+    return connected;
+  })(hub, sendToHub);
+
+  await hub.start();
+  
+  console.log("hub connected", hub.connectionId);
+  
+  // broadcast
+  await sendToHub({
+    Target: "connected",
+    Arguments: [{
+      from: hub.connectionId
+    }]
+  });
+  const pc = await connected;
+  console.log(`connection State = ${pc.connectionState}`, pc);
+
+  hub.stop();
+
+
+  const v = document.createElement("video");
+  v.srcObject = stream;
+  v.width = 300;
+  v.height = 300;
+  v.muted = true;
+  v.autoplay = true;
+  document.body.appendChild(v);
+  await v.play();
+
+  
 
 
 
@@ -86,7 +192,7 @@ async function getIdToken({baseUrl, clientId, callback}) {
     );
 
     if (response.ok) {
-      return await response.json();
+      return (await response.json()).id_token;
     }
 
     if (response.status == 403

@@ -23,6 +23,7 @@ const auth0 = {
       return;
     }
 
+    
     await auth.handleRedirectCallback();
     window.history.replaceState({}, document.title, location.pathname);
 
