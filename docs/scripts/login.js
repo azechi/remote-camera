@@ -1,11 +1,11 @@
 
-const auth0 = {
+export const auth0 = {
 
   loggedIn: (async function(location, configPath){
     const url = new URL(window.location);
     const config = await fetch(configPath).then(r => r.json());
 
-    auth = await createAuth0Client({
+    const auth = await createAuth0Client({
       domain: config.domain,
       client_id: config.clientId,
       redirect_uri: url.origin + url.pathname

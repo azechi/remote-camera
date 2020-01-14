@@ -1,4 +1,5 @@
-class LANPeerConnection extends RTCPeerConnection {
+
+export class LANPeerConnection extends RTCPeerConnection {
   constructor(...args) {
     super(...args);
     

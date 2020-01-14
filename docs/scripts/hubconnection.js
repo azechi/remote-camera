@@ -1,5 +1,5 @@
 
-async function buildHubConnection({serviceUrl, idTokenFactory}) {
+export async function buildHubConnection({serviceUrl, idTokenFactory}) {
 
   const hub_info = await fetch(new URL("negotiate", serviceUrl), {
     mode: "cors",

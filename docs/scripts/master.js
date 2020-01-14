@@ -1,5 +1,10 @@
 import Vue from 'https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.esm.browser.js';
 
+import {LANPeerConnection} from './lanpeerconnection.js'
+import {auth0} from './login.js'
+import {buildHubConnection} from './hubconnection.js'
+
+
 const app = new Vue({
   el: "#app",
   data: {
