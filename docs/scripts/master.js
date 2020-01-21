@@ -9,7 +9,14 @@ const app = new Vue({
   el: "#app",
   data: {
     userName: "...",
-    peerConnectionState: ""
+    peerConnectionState: "",
+
+    useCamera: true
+  },
+  methods: {
+    async startVideo() {
+
+    }
   }
 
 });
@@ -25,100 +32,56 @@ const app = new Vue({
     idTokenFactory: () => auth.getIdTokenClaims().then(x => x.__raw)
   });
 
+  const connected = new Promise(resolve => {
+    hub.on('offer', ({from, sessionDescription}) => {
 
-  const connected = ((hub, sendToHub)=> {
+      const sendSignalingMessage = to => {
+      };
 
-    const sendSignalingMessage = to => {
-      return async sessionDescription => {
-        //console.log(`from [${hub.connectionId}]`,`to [${to}]`,sessionDescription);
+      const pc = new LANPeerConnection();
+      pc.send = async sessionDescription => {
         await sendToHub({
-          Target: 'message',
+          Target: 'answer',
           Arguments: [{
             from: hub.connectionId,
-            sessionDescription: sessionDescription
+            sessionDescription: sessionDescription,
           }],
-          ConnectionId: to
+          ConnectionId: from
         });
       };
-    };
-
-    let resolveConnected;
-    const connected = new Promise(resolve => {
-      resolveConnected = resolve;
-    });
-
-    const initPeerConnection = from => {
-      const pc = new LANPeerConnection();
-      pc.send = sendSignalingMessage(from);
 
       const h = () => {
         if (pc.connectionState == 'connected') {
-          resolveConnected(pc);
+          resolve(pc);
           pc.removeEventListener('connectionstatechange', h);
         }
       };
 
       pc.addEventListener('connectionstatechange', h);
-
-      return pc;
-    };
-
-    let pc;
-    hub.on("connected", ({from}) => {
-
-      if (!from || from == hub.connectionId) {
-        return;
-      }
-
-      // initiator
-      pc = initPeerConnection(from);
-      pc.createSignalingDataChannel();
-
-    });
-
-    hub.on('message', async ({from, sessionDescription}) => {
-
-      if (sessionDescription.type == 'offer') {
-        // receiver
-        pc = initPeerConnection(from);
-      }
-
       pc.setRemoteDescription(sessionDescription);
 
     });
 
-    return connected;
-  })(hub, sendToHub);
+  });
 
   await hub.start();
   console.log("hub connected", hub.connectionId);
-
-  // broadcast
-  await sendToHub({
-    Target: "connected",
-    Arguments: [{
-      from: hub.connectionId
-    }]
-  });
 
   const pc = await connected;
   app.peerConnectionState = pc.connectionState;
   await Vue.nextTick();
 
-  // get mediastream
   const v = document.createElement("video");
-  v.muted = true;
-  v.autoplay = true;
   v.height = 300;
   v.width = 300;
   v.loop = true;
   v.src = "video.mp4";
 
-  document.body.appendChild(v);
+  //document.body.appendChild(v);
   // v.load() ???
 
   console.log("!!!");
-  //await v.play();
+  await v.play();
 
 
 
@@ -135,6 +98,25 @@ const app = new Vue({
     console.log("addTrack");
     v.oncanplay = null;
   }
+
+  await new Promise(resolve => setTimeout(resolve, 0));
+/*
+  const constraints = {
+    video: {
+      facingMode: "user",
+      aspectRatio: 1
+    }
+  };
+*/
+ // const stream = await navigator.mediaDevices.getUserMedia(constraints);
+ // stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+  
+  
+  /*
+
+  // get mediastream
+  */
   
 })();
 

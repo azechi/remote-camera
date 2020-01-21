@@ -2,148 +2,88 @@
 import {LANPeerConnection} from './lanpeerconnection.js'
 import {buildHubConnection} from './hubconnection.js'
 
-(async () => {
-
-
-// fetch (negotiate)
-// 403 forbidden
-
-
-// get idToken
-//device authorization flow
-// auth0
-const idToken = await getIdToken({
-  baseUrl: "https://azechify.auth0.com/oauth/", 
-  clientId: "18cBqG2qRvzXvxdGrMamVpVL3zB9b1tn",
-  callback: (user_code, verification_uri, verification_uri_complete) => {
-    console.log(user_code, verification_uri, verification_uri_complete);
-    [user_code, verification_uri].forEach(s => {
-      const p = document.createElement('p');
-      p.innerText = s;
-      document.body.appendChild(p);
-    });
-
-    const a = document.createElement("a");
-    a.href = verification_uri_complete;
-    a.innerText = verification_uri_complete;
-    document.body.appendChild(a);
-  }
-});
-
-console.log(idToken);
-
-
-
-
-// fetch (login)
-// start login session 
-// cookie をもらう
-
-
-/// connect Hub
-
-const {hub, send: sendToHub} = await buildHubConnection({
-  serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
-  // idToken の期限が切れてしまったら？
-  idTokenFactory: () => idToken
-});
 
 const stream = new MediaStream();
 
+window.onload = () => {
+ document.getElementById("video").srcObject = stream; 
+};
 
-const connected = ((hub, sendToHub)=> {
 
-    const sendSignalingMessage = to => {
-      return async sessionDescription => {
-        //console.log(`from [${hub.connectionId}]`,`to [${to}]`,sessionDescription);
-        await sendToHub({
-          Target: 'message',
-          Arguments: [{
-            from: hub.connectionId,
-            sessionDescription: sessionDescription
-          }],
-          ConnectionId: to
-        });
-      };
-    };
+(async () => {
 
-    let resolveConnected;
-    const connected = new Promise(resolve => {
-      resolveConnected = resolve;
-    });
+  // get idToken
+  //device authorization flow
+  // auth0
+  const idToken = await getIdToken({
+    baseUrl: "https://azechify.auth0.com/oauth/", 
+    clientId: "18cBqG2qRvzXvxdGrMamVpVL3zB9b1tn",
+    callback: (user_code, verification_uri, verification_uri_complete) => {
+      console.log(user_code, verification_uri, verification_uri_complete);
+      [user_code, verification_uri].forEach(s => {
+        const p = document.createElement('p');
+        p.innerText = s;
+        document.body.appendChild(p);
+      });
 
-    const initPeerConnection = from => {
-      const pc = new LANPeerConnection();
-      pc.send = sendSignalingMessage(from);
-
-      pc.ontrack = e => {
-        stream.addTrack(e.track);
-      };
-      
-      const h = () => {
-        if (pc.connectionState == 'connected') {
-          resolveConnected(pc);
-          pc.removeEventListener('connectionstatechange', h);
-        }
-      };
-
-      pc.addEventListener('connectionstatechange', h);
-
-      return pc;
-    };
-
-    let pc;
-    hub.on("connected", ({from}) => {
-
-      if (!from || from == hub.connectionId) {
-        return;
-      }
-
-      // initiator
-      pc = initPeerConnection(from);
-      pc.createSignalingDataChannel();
-
-    });
-
-    hub.on('message', async ({from, sessionDescription}) => {
-
-      if (sessionDescription.type == 'offer') {
-        // receiver
-        pc = initPeerConnection(from);
-      }
-
-      pc.setRemoteDescription(sessionDescription);
-
-    });
-
-    return connected;
-  })(hub, sendToHub);
-
-  await hub.start();
-  
-  console.log("hub connected", hub.connectionId);
-  
-  // broadcast
-  await sendToHub({
-    Target: "connected",
-    Arguments: [{
-      from: hub.connectionId
-    }]
+      const a = document.createElement("a");
+      a.href = verification_uri_complete;
+      a.innerText = verification_uri_complete;
+      document.body.appendChild(a);
+    }
   });
+
+  const {hub, send: sendToHub} = await buildHubConnection({
+    serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
+    // idToken の期限が切れてしまったら？
+    idTokenFactory: () => idToken
+  });
+
+
+  const connected = new Promise(resolve => {
+    const pc = new LANPeerConnection();
+    pc.send = async sessionDescription => {
+
+      // broadcast
+      await sendToHub({
+        Target: 'offer',
+        Arguments: [{
+          from: hub.connectionId,
+          sessionDescription: sessionDescription
+        }]
+      });
+
+
+    };
+
+    pc.ontrack = e => {
+      stream.addTrack(e.track);
+    };
+
+    const h = () => {
+      if (pc.connectionState == 'connected') {
+        resolve(pc);
+        pc.removeEventListener('connectionstatechange', h);
+      }
+    };
+
+    pc.addEventListener('connectionstatechange', h);
+
+
+    hub.on('answer', async ({from, sessionDescription}) => {
+      console.log("master id", from);
+      pc.setRemoteDescription(sessionDescription);
+    });
+
+
+    hub.start().then(() => pc.createSignalingDataChannel());
+  });
+
   const pc = await connected;
-  console.log(`connection State = ${pc.connectionState}`, pc);
 
   hub.stop();
 
 
-  const v = document.createElement("video");
-  v.srcObject = stream;
-  v.width = 300;
-  v.height = 300;
-  v.muted = true;
-  v.autoplay = true;
-  document.body.appendChild(v);
-  await v.play();
 
   
 
