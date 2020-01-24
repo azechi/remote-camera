@@ -1,29 +1,87 @@
 import Vue from 'https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.esm.browser.js';
 
 import {LANPeerConnection} from './lanpeerconnection.js'
-import {auth0} from './login.js'
 import {buildHubConnection} from './hubconnection.js'
 
+import auth_config  from './auth_config.js'
 
-const app = new Vue({
-  el: "#app",
-  data: {
-    userName: "...",
-    peerConnectionState: "",
+// createAuth0Client from auth0 sdk
+const loggedIn = (async ()=>{
 
-    useCamera: true
-  },
-  methods: {
-    async startVideo() {
+  const url = new URL(window.location);
+  
+  const config = auth_config;
 
-    }
+  const auth = await createAuth0Client({
+    domain: config.domain,
+    client_id: config.clientId,
+    redirect_uri: url.origin + url.pathname
+  });
+
+  if (
+    ["code", "state"].every(Array.prototype.includes, [...url.searchParams.keys()])
+  ) {
+    await auth.handleRedirectCallback();
+    window.history.replaceState({}, document.title, location.pathname);
+  } 
+
+  if (! await auth.isAuthenticated()) {
+    await auth.loginWithRedirect();
+    // sso session があったら待ち時間がある
+    await new Promise(resolve => {setTimeout(resolve, 1000 * 60)});
+    throw "auth0 loginWithRedirect TIMEOUT";
+    return;
   }
 
+  return auth;
+
+})();
+
+const mediaController =  {
+  data() {
+    return { useCamera: true};
+  },
+  methods: {
+
+    async startVideo() {
+      console.log("start video");
+    }
+  },
+  template: "#media-controller"};
+
+
+
+const remoteViewer = {
+
+  template: "#remote-viewer"
+
+};
+  
+const vueMounted = new Promise(resolve => {
+  new Vue({
+    components: {
+      "media-controller": mediaController,
+      "remote-viewer": remoteViewer
+    },
+    el: "#app",
+    data: {
+      userName: null,
+      peerConnectionState: "...",
+      viewers: [],
+    },
+    mounted: function() {
+      resolve(this);
+    },
+    methods: {
+    }
+  });
 });
 
+
+// main
 (async () => {
 
-  const auth = await auth0.loggedIn;
+  const [auth, app] = await Promise.all([loggedIn, vueMounted]);
 
   app.userName = await auth.getIdTokenClaims().then(x => x.name);
   
@@ -71,52 +129,48 @@ const app = new Vue({
   app.peerConnectionState = pc.connectionState;
   await Vue.nextTick();
 
-  const v = document.createElement("video");
-  v.height = 300;
-  v.width = 300;
-  v.loop = true;
-  v.src = "video.mp4";
-
-  //document.body.appendChild(v);
-  // v.load() ???
-
-  console.log("!!!");
-  await v.play();
-
-
-
-  let stream;
-  v.oncanplay = () => {
-    stream = v.captureStream();
-    stream.getTracks().forEach(t => pc.addTrack(t, stream));
-    console.log("addTrack");
-    v.oncanplay = null;
-  };
-  if(v.readyState >= 3) {
-    stream = v.captureStream();
-    stream.getTracks().forEach(t => pc.addTrack(t, stream));
-    console.log("addTrack");
-    v.oncanplay = null;
-  }
-
   await new Promise(resolve => setTimeout(resolve, 0));
-/*
+
+  const stream = await getDummyVideo();
+
+  stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+  
+})();
+
+
+async function getUserMedia() {
+  
   const constraints = {
     video: {
       facingMode: "user",
       aspectRatio: 1
     }
   };
-*/
- // const stream = await navigator.mediaDevices.getUserMedia(constraints);
- // stream.getTracks().forEach(t => pc.addTrack(t, stream));
 
+  return await navigator.mediaDevices.getUserMedia(constraints);
   
-  
-  /*
+};
 
-  // get mediastream
-  */
-  
-})();
+async function getDummyMediai() {
+
+  const v = document.createElement("video");
+  v.loop = true;
+  v.src = "video.mp4";
+  await v.play();
+
+  return await new Promise(resolve => {
+    v.oncanplay = () => {
+      v.oncanplay = null;
+      resolve(v.captureStream());
+    };
+
+    if(v.readyState >= 3) {
+      v.oncanplay = null;
+      resolve(v.captureStream());
+    }
+  });
+
+};
+
 

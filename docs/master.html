@@ -13,8 +13,10 @@
   display: none;
 }
 
+
 [v-cloak]::before { 
-  content: "loading...";
+  content: "component loading...";
+  font-size: 5em;
 }
 
     </style>
@@ -22,22 +24,26 @@
 
   <body>
     <div id="app" v-cloak>
+
+      <p>{{ userName || "login..." }}</p>
+      <p>{{ peerConnectionState }}</p>
+      <hr/>
+      <template v-for="viewer of viewers">
+        <remote-viewer v-bind:key="viewer.id">{{ viewer.name}}</remote-viewer>
+      </template>
+
+      <media-controller v-if="userName"></media-controller>
+    </div>
+
+    <script type="text/x-template" id="media-controller">
       <div>
         <label><input type="radio" v-model="useCamera" value="false">サンプル映像</label>
         <label><input type="radio" v-model="useCamera" value="true">カメラ</label>
         <button v-on:click="startVideo">start</button>
       </div>
-      <hr/>
-      <div>
-      </div>
+    </script>
 
-      <p>{{ userName }}</p>
-      <p>{{ peerConnectionState }}</p>
-
-
-    </div>
-
-    <script type="text/x-template" id="viewer">
+    <script type="text/x-template" id="remote-viewer">
     </script>
 
   </body>
