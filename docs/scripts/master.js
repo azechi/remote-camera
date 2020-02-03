@@ -38,41 +38,76 @@ const loggedIn = (async ()=>{
 })();
 
 const mediaController =  {
+  props: ['mediaStream'],
   data() {
-    return { useCamera: true};
+    return { 
+      useCamera: true
+    
+    };
   },
   methods: {
-
     async startVideo() {
-      console.log("start video");
+
+      
+      const ms = await getDummyMedia();      
+
+
+
+      this.$emit('set-media-stream', ms)
     }
   },
-  template: "#media-controller"};
-
-
+  template: "#media-controller"
+};
 
 const remoteViewer = {
-
+  props: ['mediaStream'],
+  data() {
+    return {
+    };
+  },
+  watch: {
+    mediaStream: function (val, oldVal) {
+      console.log("mediaStream changed", val);
+    }
+  },
   template: "#remote-viewer"
-
 };
-  
+
+const localViewer = {
+  props: ['mediaStream'],
+  watch: {
+    mediaStream: async function(val, oldVal) {
+      const v = this.$el;
+      console.log(v);
+      v.srcObject = val;
+      //await v.play();
+    }
+  },
+
+  template: "#local-viewer"
+};
+
 const vueMounted = new Promise(resolve => {
   new Vue({
     components: {
       "media-controller": mediaController,
+      "local-viewer": localViewer,
       "remote-viewer": remoteViewer
     },
     el: "#app",
     data: {
       userName: null,
       peerConnectionState: "...",
-      viewers: [],
+      viewers: [{"id":"123", "name":"viewer1"}],
+      mediaStream: null
     },
     mounted: function() {
       resolve(this);
     },
     methods: {
+      onSetMediaStream: function (mediaStream) {
+        this.mediaStream = mediaStream;
+      }
     }
   });
 });
@@ -152,11 +187,13 @@ async function getUserMedia() {
   
 };
 
-async function getDummyMediai() {
+async function getDummyMedia() {
 
   const v = document.createElement("video");
   v.loop = true;
   v.src = "video.mp4";
+  v.style.width = "100px";
+  v.muted = true;
   await v.play();
 
   return await new Promise(resolve => {

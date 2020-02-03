@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.6.1/auth0-spa-js.production.js"></script>
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/1.6.3/auth0-spa-js.production.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@3.1.0/dist/browser/signalr.min.js"></script>
     <script type="module" src="scripts/master.js"></script>
     <style>
@@ -27,12 +27,12 @@
 
       <p>{{ userName || "login..." }}</p>
       <p>{{ peerConnectionState }}</p>
-      <hr/>
       <template v-for="viewer of viewers">
-        <remote-viewer v-bind:key="viewer.id">{{ viewer.name}}</remote-viewer>
+        <remote-viewer v-bind:key="viewer.id" v-bind:media-stream="mediaStream">{{ viewer.name}}</remote-viewer>
       </template>
 
-      <media-controller v-if="userName"></media-controller>
+      <media-controller v-if="userName" v-on:set-media-stream="onSetMediaStream"></media-controller>
+      <local-viewer v-bind:media-stream="mediaStream"></local-viewer>
     </div>
 
     <script type="text/x-template" id="media-controller">
@@ -43,7 +43,14 @@
       </div>
     </script>
 
+    <script type="text/x-template" id="local-viewer">
+<video style="width:200px" controls loop></video>
+    </script>
+
     <script type="text/x-template" id="remote-viewer">
+<p><slot></slot>
+{{mediaStream || "undefined"}}
+</p>
     </script>
 
   </body>
