@@ -28,11 +28,15 @@
       <p>{{ userName || "login..." }}</p>
       <p>{{ peerConnectionState }}</p>
       <template v-for="viewer of viewers">
-        <remote-viewer v-bind:key="viewer.id" v-bind:media-stream="mediaStream">{{ viewer.name}}</remote-viewer>
+        <remote-viewer v-bind:key="viewer.id" v-bind:stream="mediaStream">{{viewer.name}}</remote-viewer>
       </template>
 
-      <media-controller v-if="userName" v-on:set-media-stream="onSetMediaStream"></media-controller>
-      <local-viewer v-bind:media-stream="mediaStream"></local-viewer>
+      <hr/>
+      <h2>Media Controller</h2>
+      <media-controller v-if="userName" v-bind:stream="mediaStream" v-on:set-media-stream="onSetMediaStream"></media-controller>
+      <hr/>
+      <h2>Local Viewer</h2>
+      <local-viewer v-bind:stream="mediaStream"></local-viewer>
     </div>
 
     <script type="text/x-template" id="media-controller">
@@ -40,16 +44,47 @@
         <label><input type="radio" v-model="useCamera" value="false">サンプル映像</label>
         <label><input type="radio" v-model="useCamera" value="true">カメラ</label>
         <button v-on:click="startVideo">start</button>
+        <stream-status v-bind:stream="stream"></stream-status>
       </div>
+    </script>
+  
+    <script type="text/x-template" id="track-status">
+<div>
+  <div>{{track.kind}} [{{track.id}}]</div>
+  <div>enabled[{{track.enabled}}] readyState[{{track.readyState}}] muted[{{track.muted}}]</div>
+  <div>
+    <button v-on:click="stop">stop</button>
+    <button v-on:click="toggleEnabled">{{track.enabled ? "disable" : "enable"}}</button>
+  </div>
+</div>
+    </script>
+
+
+    <script type="text/x-template" id="stream-status">
+<div style="font-family:monospace;font-size:smaller">
+  <div>stream id: {{stream.id}}</div>
+  <div>
+    <hr />
+    <template v-for='track of trackList'>
+      <hr v-if="track.separator" />
+      <track-status v-else v-bind:track="track"></track-status>
+    </template>
+    <hr />
+  </div>
+</div>
     </script>
 
     <script type="text/x-template" id="local-viewer">
-<video style="width:200px" controls loop></video>
+<div>
+  <stream-status v-bind:stream="stream"></stream-status>
+  <video ref="video" style="width:200px" controls loop></video>
+</div>
     </script>
+
 
     <script type="text/x-template" id="remote-viewer">
 <p><slot></slot>
-{{mediaStream || "undefined"}}
+{{stream || "undefined"}}
 </p>
     </script>
 

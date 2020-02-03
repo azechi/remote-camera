@@ -37,48 +37,81 @@ const loggedIn = (async ()=>{
 
 })();
 
+const trackStatus = {
+  props: ['track'],
+  template: '#track-status',
+  methods: {
+    stop () {
+      console.log("stop");
+      this.track.stop();
+    },
+    toggleEnabled() {
+      console.log("toggleEnabled", this.track.enabled);
+      this.track.enabled = !this.track.enabled;
+      console.log("toggleEnabled", this.track.enabled);
+    }
+  },
+  watch: {
+    track: function(val, oldVal){
+      val.onended = () => {
+        console.log("ended", val);
+      };
+      val.onmute = () => {
+        console.log("mute", val);
+      };
+      val.onunmute = () => {
+        console.log("unmute", val);
+      };
+    }
+  }
+}
+
+
+const streamStatus = {
+  components: {
+    "track-status": trackStatus
+  },
+  props: ['stream'],
+  template: "#stream-status",
+  computed: {
+    trackList: (vm) => {
+      if(!("getTracks" in vm.stream)) {
+        return [];
+      }
+      return vm.stream.getTracks().flatMap((v,i)=>(i)?[{'separator':true}, v]:v);
+    }
+  }
+}
+
 const mediaController =  {
-  props: ['mediaStream'],
+  components: {
+    "stream-status": streamStatus
+  },
+  props: ['stream'],
   data() {
     return { 
       useCamera: true
-    
     };
   },
   methods: {
     async startVideo() {
-
-      
       const ms = await getDummyMedia();      
-
-
-
       this.$emit('set-media-stream', ms)
     }
   },
   template: "#media-controller"
 };
 
-const remoteViewer = {
-  props: ['mediaStream'],
-  data() {
-    return {
-    };
-  },
-  watch: {
-    mediaStream: function (val, oldVal) {
-      console.log("mediaStream changed", val);
-    }
-  },
-  template: "#remote-viewer"
-};
-
 const localViewer = {
-  props: ['mediaStream'],
+  components: {
+      "stream-status": streamStatus
+  },
+  props: ['stream'],
   watch: {
-    mediaStream: async function(val, oldVal) {
-      const v = this.$el;
-      console.log(v);
+    stream: async function(val, oldVal) {
+      
+      const v = this.$refs.video;
+      console.log(v, val);
       v.srcObject = val;
       //await v.play();
     }
@@ -87,19 +120,33 @@ const localViewer = {
   template: "#local-viewer"
 };
 
+const remoteViewer = {
+  props: ['stream'],
+  data() {
+    return {
+    };
+  },
+  watch: {
+    stream: function (val, oldVal) {
+      console.log("mediaStream changed", val);
+    }
+  },
+  template: "#remote-viewer"
+};
+
 const vueMounted = new Promise(resolve => {
   new Vue({
     components: {
       "media-controller": mediaController,
       "local-viewer": localViewer,
-      "remote-viewer": remoteViewer
+      "remote-viewer": remoteViewer,
     },
     el: "#app",
     data: {
       userName: null,
       peerConnectionState: "...",
       viewers: [{"id":"123", "name":"viewer1"}],
-      mediaStream: null
+      mediaStream: {}
     },
     mounted: function() {
       resolve(this);
@@ -192,7 +239,7 @@ async function getDummyMedia() {
   const v = document.createElement("video");
   v.loop = true;
   v.src = "video.mp4";
-  v.style.width = "100px";
+  //v.style.width = "100px";
   v.muted = true;
   await v.play();
 
