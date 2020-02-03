@@ -46,9 +46,8 @@ const trackStatus = {
       this.track.stop();
     },
     toggleEnabled() {
-      console.log("toggleEnabled", this.track.enabled);
       this.track.enabled = !this.track.enabled;
-      console.log("toggleEnabled", this.track.enabled);
+      this.$forceUpdate();
     }
   },
   watch: {

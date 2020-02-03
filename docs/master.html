@@ -67,7 +67,7 @@
     <hr />
     <template v-for='track of trackList'>
       <hr v-if="track.separator" />
-      <track-status v-else v-bind:track="track"></track-status>
+      <track-status v-else v-bind:key="track.id" v-bind:track="track"></track-status>
     </template>
     <hr />
   </div>
