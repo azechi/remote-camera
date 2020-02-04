@@ -44,17 +44,16 @@
         <label><input type="radio" v-model="useCamera" value="false">サンプル映像</label>
         <label><input type="radio" v-model="useCamera" value="true">カメラ</label>
         <button v-on:click="startVideo">start</button>
-        <stream-status v-bind:stream="stream"></stream-status>
+        <stream-status v-if="stream" v-bind:stream="stream"></stream-status>
       </div>
     </script>
-  
+
     <script type="text/x-template" id="track-status">
 <div>
-  <div>{{track.kind}} [{{track.id}}]</div>
-  <div>enabled[{{track.enabled}}] readyState[{{track.readyState}}] muted[{{track.muted}}]</div>
+  <div>{{enabled}}: {{id}}</div>
   <div>
     <button v-on:click="stop">stop</button>
-    <button v-on:click="toggleEnabled">{{track.enabled ? "disable" : "enable"}}</button>
+    <button v-on:click="toggleEnabled">{{enabled ? "disable" : "enable"}}</button>
   </div>
 </div>
     </script>
@@ -67,7 +66,7 @@
     <hr />
     <template v-for='track of trackList'>
       <hr v-if="track.separator" />
-      <track-status v-else v-bind:key="track.id" v-bind:track="track"></track-status>
+      <track-status v-else v-bind:key="track.id" v-bind="track" v-on:set-enabled="onSetTrackEnabled"></track-status>
     </template>
     <hr />
   </div>
@@ -76,7 +75,7 @@
 
     <script type="text/x-template" id="local-viewer">
 <div>
-  <stream-status v-bind:stream="stream"></stream-status>
+  <stream-status v-if="stream" v-bind:stream="stream"></stream-status>
   <video ref="video" style="width:200px" controls loop></video>
 </div>
     </script>

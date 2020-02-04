@@ -38,33 +38,17 @@ const loggedIn = (async ()=>{
 })();
 
 const trackStatus = {
-  props: ['track'],
-  template: '#track-status',
+  template: "#track-status",
+  props: ["id", "enabled"],
   methods: {
-    stop () {
-      console.log("stop");
-      this.track.stop();
-    },
     toggleEnabled() {
-      this.track.enabled = !this.track.enabled;
-      this.$forceUpdate();
-    }
-  },
-  watch: {
-    track: function(val, oldVal){
-      val.onended = () => {
-        console.log("ended", val);
-      };
-      val.onmute = () => {
-        console.log("mute", val);
-      };
-      val.onunmute = () => {
-        console.log("unmute", val);
-      };
+      this.$emit('set-enabled', this.id);
+    },
+    stop() {
+      console.log("stop");
     }
   }
 }
-
 
 const streamStatus = {
   components: {
@@ -72,12 +56,29 @@ const streamStatus = {
   },
   props: ['stream'],
   template: "#stream-status",
+  data() {
+    return {
+      tracks: []
+    };
+  },
   computed: {
-    trackList: (vm) => {
-      if(!("getTracks" in vm.stream)) {
-        return [];
+    trackList() {
+      return this.tracks.flatMap((v,i)=>(i)?[{'separator':true}, v]:v);
+    }
+  },
+  methods: {
+    onSetTrackEnabled(id) {
+      const track = this.stream.getTrackById(id);
+      track.enabled = !track.enabled;
+      this.tracks = this.stream.getTracks();
+    }
+  },
+  watch: {
+    stream: {
+      immediate: true,
+      handler: function(val, oldVal) {
+        this.tracks = val.getTracks();
       }
-      return vm.stream.getTracks().flatMap((v,i)=>(i)?[{'separator':true}, v]:v);
     }
   }
 }
@@ -145,7 +146,7 @@ const vueMounted = new Promise(resolve => {
       userName: null,
       peerConnectionState: "...",
       viewers: [{"id":"123", "name":"viewer1"}],
-      mediaStream: {}
+      mediaStream: undefined
     },
     mounted: function() {
       resolve(this);
