@@ -39,22 +39,29 @@
       <local-viewer v-bind:stream="mediaStream"></local-viewer>
     </div>
 
-    <script type="text/x-template" id="media-controller">
-      <div>
-        <label><input type="radio" v-model="useCamera" value="false">サンプル映像</label>
-        <label><input type="radio" v-model="useCamera" value="true">カメラ</label>
-        <button v-on:click="startVideo">start</button>
-        <stream-status v-if="stream" v-bind:stream="stream"></stream-status>
-      </div>
+    <script id="dummy-media" type="text/x-template">
+<div>
+
+</div>
+    </script>
+
+    <script id="media-controller" type="text/x-template">
+<div>
+  <label><input type="radio" v-model="useCamera" value="false">サンプル映像</label>
+  <div>
+    <label><input type="radio" v-model="useCamera" value="true">カメラ</label>
+    <dummy-media v-bind:bus="bus" v-on:start-media="onStartMedia"></dummy-media>
+  </div>
+  <button v-on:click="startMedia">start</button>
+  
+</div>
     </script>
 
     <script type="text/x-template" id="track-status">
 <div>
-  <div>{{enabled}}: {{id}}</div>
-  <div>
-    <button v-on:click="stop">stop</button>
-    <button v-on:click="toggleEnabled">{{enabled ? "disable" : "enable"}}</button>
-  </div>
+  {{kind}}: {{readyState}} : {{id}} 
+  <button v-if="!ended" v-on:click="toggleEnabled">{{enabled ? "disable" : "enable"}}</button>
+  <button v-if="!ended" v-on:click="stop">stop</button>
 </div>
     </script>
 
@@ -66,7 +73,7 @@
     <hr />
     <template v-for='track of trackList'>
       <hr v-if="track.separator" />
-      <track-status v-else v-bind:key="track.id" v-bind="track" v-on:set-enabled="onSetTrackEnabled"></track-status>
+      <track-status v-else v-bind:key="track.id" v-bind="track" v-on:stop="onStopTrack" v-on:set-enabled="onSetTrackEnabled"></track-status>
     </template>
     <hr />
   </div>

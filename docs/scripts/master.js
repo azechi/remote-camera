@@ -39,13 +39,18 @@ const loggedIn = (async ()=>{
 
 const trackStatus = {
   template: "#track-status",
-  props: ["id", "enabled"],
+  props: ["id", "enabled", "readyState", "kind"],
+  computed: {
+    ended() {
+      return this.readyState == "ended";
+    }
+  },
   methods: {
     toggleEnabled() {
       this.$emit('set-enabled', this.id);
     },
     stop() {
-      console.log("stop");
+      this.$emit('stop', this.id); 
     }
   }
 }
@@ -67,6 +72,11 @@ const streamStatus = {
     }
   },
   methods: {
+    onStopTrack(id) {
+      const track = this.stream.getTrackById(id);
+      track.stop();
+      this.tracks = this.stream.getTracks();
+    },
     onSetTrackEnabled(id) {
       const track = this.stream.getTrackById(id);
       track.enabled = !track.enabled;
@@ -83,23 +93,65 @@ const streamStatus = {
   }
 }
 
-const mediaController =  {
-  components: {
-    "stream-status": streamStatus
-  },
-  props: ['stream'],
+const dummyMedia = {
+  template: "#dummy-media",
+  props: ["bus"],
   data() {
-    return { 
-      useCamera: true
+    return {
+      ready: true,
+      mediaElement: document.createElement("video"),
     };
   },
   methods: {
-    async startVideo() {
-      const ms = await getDummyMedia();      
-      this.$emit('set-media-stream', ms)
+    async start() {
+      const e = this.mediaElement;
+
+      await e.play();
+      const stream = await new Promise(resolve => {
+        e.oncanplay = () => {
+          e.oncanplay = null;
+          resolve(e.captureStream()); 
+        };
+        
+        if(e.readyState >= 3) {
+          e.oncanplay = null;
+          resolve(e.captureStream());
+        }
+      });  
+      
+      this.$emit("start-media", stream)
     }
   },
-  template: "#media-controller"
+  created() {
+    this.bus.$on("start", this.start);
+
+    this.mediaElement.loop = true;
+    this.mediaElement.src = "video.mp4";
+    // captureStreamのmutedではない、playerのmuted
+    this.mediaElement.muted = true;
+  }
+}
+
+
+const mediaController =  {
+  template: "#media-controller",
+  components: {
+    "dummy-media": dummyMedia
+  },
+  data() {
+    return { 
+      useCamera: true,
+      bus: new Vue()
+    };
+  },
+  methods: {
+    startMedia() {
+      this.bus.$emit('start');
+    },
+    onStartMedia(stream) {
+      this.$emit('set-media-stream', stream);
+    }
+  }
 };
 
 const localViewer = {
@@ -234,27 +286,5 @@ async function getUserMedia() {
   
 };
 
-async function getDummyMedia() {
-
-  const v = document.createElement("video");
-  v.loop = true;
-  v.src = "video.mp4";
-  //v.style.width = "100px";
-  v.muted = true;
-  await v.play();
-
-  return await new Promise(resolve => {
-    v.oncanplay = () => {
-      v.oncanplay = null;
-      resolve(v.captureStream());
-    };
-
-    if(v.readyState >= 3) {
-      v.oncanplay = null;
-      resolve(v.captureStream());
-    }
-  });
-
-};
 
 
