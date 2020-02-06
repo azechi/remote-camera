@@ -10,12 +10,12 @@ const template = `
 `
 
 import Vue from '../vue.js';
-import dummyMedia from './dummyMedia.js';
+import DummyMedia from './DummyMedia.js';
 
 export default {
   template,
   components: {
-    "dummy-media": dummyMedia
+    DummyMedia
   },
   data() {
     return { 
@@ -31,5 +31,20 @@ export default {
       this.$emit('set-media-stream', stream);
     }
   }
+};
+
+
+
+async function getUserMedia() {
+  
+  const constraints = {
+    video: {
+      facingMode: "user",
+      aspectRatio: 1
+    }
+  };
+
+  return await navigator.mediaDevices.getUserMedia(constraints);
+  
 };
 

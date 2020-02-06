@@ -5,12 +5,12 @@ const template = `
 </div>
 `
 
-import streamStatus from './streamStatus.js';
+import StreamStatus from './StreamStatus.js';
 
 export default {
   template,
   components: {
-      "stream-status": streamStatus
+      StreamStatus
   },
   props: ['stream'],
   watch: {

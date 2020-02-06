@@ -12,12 +12,12 @@ const template = `
 </div>
 `;
 
-import trackStatus from './trackStatus.js';
+import TrackStatus from './TrackStatus.js';
 
 export default {
   template,
   components: {
-    "track-status": trackStatus
+    TrackStatus
   },
   props: ['stream'],
   data() {
