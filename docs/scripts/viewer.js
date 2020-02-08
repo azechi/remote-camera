@@ -1,7 +1,5 @@
-
 import {LANPeerConnection} from './lanpeerconnection.js'
 import {buildHubConnection} from './hubconnection.js'
-
 
 const stream = new MediaStream();
 
@@ -9,8 +7,9 @@ window.onload = () => {
  document.getElementById("video").srcObject = stream; 
 };
 
-
 (async () => {
+
+  const message = document.getElementById("message");
 
   // get idToken
   //device authorization flow
@@ -23,19 +22,20 @@ window.onload = () => {
       [user_code, verification_uri].forEach(s => {
         const p = document.createElement('p');
         p.innerText = s;
-        document.body.appendChild(p);
+        message.appendChild(p);
       });
 
       const a = document.createElement("a");
       a.href = verification_uri_complete;
       a.innerText = verification_uri_complete;
-      document.body.appendChild(a);
+      message.appendChild(a);
     }
   });
 
+  message.remove();
+
   const {hub, send: sendToHub} = await buildHubConnection({
     serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
-    // idToken の期限が切れてしまったら？
     idTokenFactory: () => idToken
   });
 
@@ -69,6 +69,7 @@ window.onload = () => {
 
     pc.addEventListener('connectionstatechange', h);
 
+    hub.on('offer', () => {/* noop */});
 
     hub.on('answer', async ({from, sessionDescription}) => {
       console.log("master id", from);
