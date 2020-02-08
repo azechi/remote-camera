@@ -21,19 +21,6 @@
     </style>
   </head>
   <body>
-    <div id="app" v-cloak>
-      <p>{{ userName || "login..." }}</p>
-      <p>{{ peerConnectionState }}</p>
-      <template v-for="viewer of viewers">
-        <remote-viewer v-bind:key="viewer.id" v-bind:stream="mediaStream">{{viewer.name}}</remote-viewer>
-      </template>
-
-      <hr/>
-      <h2>Media Controller</h2>
-      <media-controller v-if="userName" v-bind:stream="mediaStream" v-on:set-media-stream="onSetMediaStream"></media-controller>
-      <hr/>
-      <h2>Local Viewer</h2>
-      <local-viewer v-bind:stream="mediaStream"></local-viewer>
-    </div>
+    <div id="app" v-cloak></div>
   </body>
 </html>
