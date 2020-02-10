@@ -46,7 +46,9 @@ export default {
       this.mediaStream = mediaStream;
     },
     onReceiveOffer: function(remote) {
-      this.remoteViewers.push(remote);
+      if (!this.remoteViewers.some(x => x.id == remote.id)){
+        this.remoteViewers.push(remote);
+      }
     }
   }
 };

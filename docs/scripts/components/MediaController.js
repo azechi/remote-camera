@@ -4,6 +4,7 @@ const template = `
   <div>
     <label><input type="radio" v-model="useCamera" value="true">カメラ</label>
     <dummy-media v-bind:bus="bus" v-on:start-media="onStartMedia"></dummy-media>
+    <user-media v-bind:bus="bus" v-on:start-media="onStartMedia"></user-media>"
   </div>
   <button v-on:click="startMedia">start</button>
 </div>
@@ -11,11 +12,13 @@ const template = `
 
 import Vue from '../vue.js';
 import DummyMedia from './DummyMedia.js';
+import UserMedia from './UserMedia.js';
 
 export default {
   template,
   components: {
-    DummyMedia
+    DummyMedia,
+    UserMedia
   },
   data() {
     return { 
@@ -35,16 +38,4 @@ export default {
 
 
 
-async function getUserMedia() {
-  
-  const constraints = {
-    video: {
-      facingMode: "user",
-      aspectRatio: 1
-    }
-  };
-
-  return await navigator.mediaDevices.getUserMedia(constraints);
-  
-};
 

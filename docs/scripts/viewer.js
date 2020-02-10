@@ -2,15 +2,16 @@ import {LANPeerConnection} from './lanpeerconnection.js'
 import {buildHubConnection} from './hubconnection.js'
 
 const stream = new MediaStream();
+let message;
+let p_status;
 
 window.onload = () => {
- document.getElementById("video").srcObject = stream; 
+  document.getElementById("video").srcObject = stream;
+  message = document.getElementById("message");
+  p_status = document.getElementById("status");
 };
 
 (async () => {
-
-  const message = document.getElementById("message");
-
   // get idToken
   //device authorization flow
   // auth0
@@ -22,6 +23,7 @@ window.onload = () => {
       [user_code, verification_uri].forEach(s => {
         const p = document.createElement('p');
         p.innerText = s;
+        // await document.load
         message.appendChild(p);
       });
 
@@ -32,7 +34,8 @@ window.onload = () => {
     }
   });
 
-  message.remove();
+  [...message.children].map(e=>e.remove());
+  p_status.innerText = "hub connection ...";
 
   const {hub, send: sendToHub} = await buildHubConnection({
     serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
@@ -40,19 +43,26 @@ window.onload = () => {
   });
 
 
+
+  let flg = false;
+
   const connected = new Promise(resolve => {
     const pc = new LANPeerConnection();
     pc.send = async sessionDescription => {
 
-      // broadcast
-      await sendToHub({
-        Target: 'offer',
-        Arguments: [{
-          from: hub.connectionId,
-          sessionDescription: sessionDescription
-        }]
-      });
-
+      // polling
+      while(!flg) {
+        // broadcast
+        await sendToHub({
+          Target: 'offer',
+          Arguments: [{
+            from: hub.connectionId,
+            sessionDescription: sessionDescription
+          }]
+        });
+        p_status.innerText = "offerした";
+        await new Promise(r => setTimeout(r, 2000));
+      }
 
     };
 
@@ -72,15 +82,22 @@ window.onload = () => {
     hub.on('offer', () => {/* noop */});
 
     hub.on('answer', async ({from, sessionDescription}) => {
+      flg = true;
+      p_status.innerText = "answer 来た";
       console.log("master id", from);
       pc.setRemoteDescription(sessionDescription);
     });
-
-
-    hub.start().then(() => pc.createSignalingDataChannel());
+    
+    hub.start().then(() => {
+      p_status.innerText = "hub connected";  
+      pc.createSignalingDataChannel();
+    });
+    
   });
 
+  p_status.innerText = "hub connecting ...";
   const pc = await connected;
+  p_status.innerText = "connected!"
 
   hub.stop();
 
