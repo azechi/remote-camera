@@ -68,6 +68,7 @@ window.onload = () => {
 
     pc.ontrack = e => {
       stream.addTrack(e.track);
+      p_status.innerText = "";
     };
 
     const h = () => {
