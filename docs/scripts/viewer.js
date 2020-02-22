@@ -117,7 +117,7 @@ async function getIdToken({baseUrl, clientId, callback}) {
 
   let p = new URLSearchParams();
   p.set('client_id', clientId);
-  p.set('scope', 'openid');
+  p.set('scope', 'openid offline_access');
   //p.set('audience', audience);
 
   let data = await fetch(

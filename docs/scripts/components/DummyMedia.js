@@ -6,7 +6,7 @@ const template = `
 
 export default {
   template,
-  props: ["bus"],
+  props: ["bus", "enabled"],
   data() {
     return {
       ready: true,
@@ -15,6 +15,9 @@ export default {
   },
   methods: {
     async start() {
+      if (!this.enabled) {
+        return;
+      }
       const e = this.mediaElement;
 
       await e.play();
