@@ -22,7 +22,8 @@ export default {
         video: {
           facingMode: "user",
           aspectRatio: 1
-        }
+        },
+        audio: true
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
