@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@3.1.0/dist/browser/signalr.min.js"></script>
     <script type="module">
-import getIdToken from './scripts/viewer_login.js'
-    
-getIdToken(window.localStorage, obj => console.log(obj))
-.then(token => console.log(token));
+import {getIdToken, getRefreshToken} from './scripts/viewer_login.js'
 
+const key = "Refresh Token";
+const storage = window.localStorage;
+
+const rt = storage.getItem(key);
+
+if (rt) {
+  getIdToken(rt).then(x => console.log("id token", x));
+} else {
+  getRefreshToken(obj => console.log(obj)).then(x => console.log("refresh token", x));
+}
     </script>
   </head>
   <body>
