@@ -1,72 +1,89 @@
-import auth_config from './auth_config.js';
+export {getRefreshToken, getIdToken};
 
-auth_config.clientId = '18cBqG2qRvzXvxdGrMamVpVL3zB9b1tn'
 
-const key = "Refresh Token";
 
-// storage: { getItem(SKey):SValue?, removeItem(SKey): void, setItem(SKey, SValue): void }
-// async display({user_code, verification_uri, verification_uri_complete}): void;
-export default (async (storage, display) => {
- 
-  const rt = storage.getItem(key);
-  if (rt) {
-    
-    const id = await getTokenUsingRefreshToken(rt)
+function callApi(endpointPath ,data) {
+  const domain = 'azechify.auth0.com';
+  const clientId = '18cBqG2qRvzXvxdGrMamVpVL3zB9b1tn';
 
-    if(id) {
-      return id;
-    }
-
-    // refreshToken is invalid
-    storage.removeItem(key);
-  }
-
-  // device authorization flow
-  const deviceCodeResponse = await getDeviceCode();
-
-  await display(deviceCodeResponse);
-
-  return await getTokenUsingDeviceCode(deviceCodeResponse, rt => storage.setItem(key, rt))
-
-  
-});
-
-async function getDeviceCode() {
-  const p = new URLSearchParams();
-  p.set('client_id', auth_config.clientId);
-  p.set('scope', 'openid offline_access');
-  
-  return await fetch(
-    "https://" + auth_config.domain + '/oauth/device/code',
+  return fetch(
+    `https://${domain}/oauth/${endpointPath}`,
     {
       mode: 'cors',
       method: 'POST',
-      body: p
+      body: new URLSearchParams({
+        'client_id': clientId,
+        ...data
+      })
     }
-  ).then(res => res.json());
+  );
+}
+
+/*
+  displayCallback({
+    user_code,
+    verification_uri,
+    verification_uri_complete
+  })
+*/
+
+
+async function getRefreshToken(displayCallback) {
+  
+  const deviceCodeResponse = await getDeviceCode();
+  
+  displayCallback(deviceCodeResponse);
+
+  return getIdTokenUsingDeviceCode(deviceCodeResponse);
 
 }
 
-async function getTokenUsingDeviceCode(deviceCodeResponse, storeRefreshToken) {
-  const p = new URLSearchParams();
-  p.set('client_id', auth_config.clientId);
-  p.set('device_code', deviceCodeResponse.device_code);
-  p.set('grant_type', 'urn:ietf:params:oauth:grant-type:device_code');
-  
+// new URLSearchParams()
+// fetch()
+async function getIdToken(refreshToken) {
+
+  const response = await callApi(
+  "token",
+  {
+    'grant_type': 'refresh_token',
+    'refresh_token': refreshToken
+  });
+
+  if (response.ok) {
+    return (await response.json()).id_token;
+  }
+
+  throw (await response.json());
+}
+
+async function getDeviceCode() {
+
+  const response = await callApi(
+  "device/code",
+  {
+    'scope': 'offline_access'
+  }
+  );
+
+  if (response.ok) {
+    return await response.json();
+  }
+    
+  throw await response.json();
+}
+
+async function getIdTokenUsingDeviceCode(deviceCodeResponse) {
+
   while(true) {
-    const response = await fetch(
-      "https://" + auth_config.domain + '/oauth/token',
-      {
-        mode: 'cors',
-        method: 'POST',
-        body: p
-      }
-    );
+
+    const response = await callApi("token", 
+    {
+      'device_code': deviceCodeResponse.device_code,
+      'grant_type': 'urn:ietf:params:oauth:grant-type:device_code'
+    });
   
     if(response.ok) {
-      const data = await response.json();
-      storeRefreshToken(data.refresh_token);
-      return data.id_token;
+      return await response.json();
     }
 
     if (response.status == 403
@@ -75,31 +92,7 @@ async function getTokenUsingDeviceCode(deviceCodeResponse, storeRefreshToken) {
       continue;
     }
 
-    throw (await response.json());
+    throw await response.json();
   }
-}
-
-// fetch(), new URLSearchParams()
-async function getTokenUsingRefreshToken(refreshToken) {
-  const p = new URLSearchParams();
-  p.set('client_id', auth_config.clientId);
-  p.set('grant_type', 'refresh_token');
-  p.set('refresh_token', refreshToken);
-
-  let response = await fetch(
-    "https://" + auth_config.domain + '/oauth/token',
-    {
-      mode: 'cors',
-      method: 'POST',
-      body: p
-    }
-  );
-
-  if (response.ok) {
-    return (await response.json()).id_token;
-  }
-
-  throw (await response.json());
-
 }
 
