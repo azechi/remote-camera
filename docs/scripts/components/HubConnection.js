@@ -6,19 +6,17 @@ const template = `
 </div>
 `;
 
-
-import auth0 from '../login.js';
-import {LANPeerConnection} from '../lanpeerconnection.js'
-import {buildHubConnection} from '../hubconnection.js'
-
+import auth0 from "../login.js";
+import { LANPeerConnection } from "../lanpeerconnection.js";
+import { buildHubConnection } from "../hubconnection.js";
 
 const gen = async vm => {
   const auth = await auth0;
 
   vm.userName = await auth.getIdTokenClaims().then(x => x.name);
-  
-  vm.state = "initialize"
-  const {hub, send: sendToHub} = await buildHubConnection({
+
+  vm.state = "initialize";
+  const { hub, send: sendToHub } = await buildHubConnection({
     serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
     idTokenFactory: () => auth.getIdTokenClaims().then(x => x.__raw)
   });
@@ -26,30 +24,30 @@ const gen = async vm => {
   vm.state = "connecting...";
 
   const connected = new Promise(resolve => {
-    hub.on('offer', ({from, sessionDescription}) => {
+    hub.on("offer", ({ from, sessionDescription }) => {
       const pc = new LANPeerConnection();
       pc.send = async sessionDescription => {
         await sendToHub({
-          Target: 'answer',
-          Arguments: [{
-            from: hub.connectionId,
-            sessionDescription: sessionDescription,
-          }],
+          Target: "answer",
+          Arguments: [
+            {
+              from: hub.connectionId,
+              sessionDescription: sessionDescription
+            }
+          ],
           ConnectionId: from
         });
       };
 
       pc.setRemoteDescription(sessionDescription);
 
-      vm.$emit('receive-offer', {id:from, pc});
+      vm.$emit("receive-offer", { id: from, pc });
     });
-
   });
 
   await hub.start();
   vm.state = `connected [${hub.connectionId}]`;
 };
-
 
 export default {
   template,
@@ -63,4 +61,3 @@ export default {
     gen(this);
   }
 };
-

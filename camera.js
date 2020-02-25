@@ -31,7 +31,7 @@ const reviver = (_, v) => {
   // attach stream
   const ms = await navigator.mediaDevices.getUserMedia(mediaConstraints);
   const mst = ms.getTracks()[0];
-  mst.applyConstraints({advanced:[{zoom:151}]});
+  mst.applyConstraints({ advanced: [{ zoom: 151 }] });
   pc.addTrack(mst, ms);
 
   // build SDP

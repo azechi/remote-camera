@@ -1,11 +1,9 @@
-
-export async function buildHubConnection({serviceUrl, idTokenFactory}) {
-
+export async function buildHubConnection({ serviceUrl, idTokenFactory }) {
   const hub_info = await fetch(new URL("negotiate", serviceUrl), {
     mode: "cors",
     method: "POST",
     headers: {
-      "Authorization" : "bearer " + await idTokenFactory()
+      Authorization: "bearer " + (await idTokenFactory())
     }
   }).then(r => r.json());
 
@@ -17,10 +15,10 @@ export async function buildHubConnection({serviceUrl, idTokenFactory}) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "Authorization": "bearer " + id_token
+        Authorization: "bearer " + id_token
       },
-      body: JSON.stringify(msg)})
-      .then(r => r.blob());
+      body: JSON.stringify(msg)
+    }).then(r => r.blob());
   };
 
   // signaling
@@ -35,5 +33,4 @@ export async function buildHubConnection({serviceUrl, idTokenFactory}) {
     hub: connection,
     send: sendMessageAsync
   };
-
-};
+}

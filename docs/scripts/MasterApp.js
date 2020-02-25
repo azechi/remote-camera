@@ -14,13 +14,13 @@ const template = `
   <h2>Local Viewer</h2>
   <local-viewer v-bind:stream="mediaStream"></local-viewer>
 </div>
-`
+`;
 
-import Vue from './vue.js';
-import MediaController from './components/MediaController.js';
-import LocalViewer from './components/LocalViewer.js';
-import HubConnection from './components/HubConnection.js';
-import RemoteViewer from './components/RemoteViewer.js';
+import Vue from "./vue.js";
+import MediaController from "./components/MediaController.js";
+import LocalViewer from "./components/LocalViewer.js";
+import HubConnection from "./components/HubConnection.js";
+import RemoteViewer from "./components/RemoteViewer.js";
 
 export default {
   template,
@@ -28,7 +28,7 @@ export default {
     HubConnection,
     RemoteViewer,
     MediaController,
-    LocalViewer,
+    LocalViewer
   },
   data() {
     return {
@@ -38,19 +38,19 @@ export default {
   },
   computed: {
     remoteViewerList() {
-      return this.remoteViewers.flatMap((v,i)=> i? [{separator:true}, v]: v);
-    },
+      return this.remoteViewers.flatMap((v, i) =>
+        i ? [{ separator: true }, v] : v
+      );
+    }
   },
   methods: {
-    onSetMediaStream: function (mediaStream) {
+    onSetMediaStream: function(mediaStream) {
       this.mediaStream = mediaStream;
     },
     onReceiveOffer: function(remote) {
-      if (!this.remoteViewers.some(x => x.id == remote.id)){
+      if (!this.remoteViewers.some(x => x.id == remote.id)) {
         this.remoteViewers.push(remote);
       }
     }
   }
 };
-
-

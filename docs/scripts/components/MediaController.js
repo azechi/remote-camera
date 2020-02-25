@@ -8,11 +8,11 @@ const template = `
   </div>
   <button v-on:click="startMedia">start</button>
 </div>
-`
+`;
 
-import Vue from '../vue.js';
-import DummyMedia from './DummyMedia.js';
-import UserMedia from './UserMedia.js';
+import Vue from "../vue.js";
+import DummyMedia from "./DummyMedia.js";
+import UserMedia from "./UserMedia.js";
 
 export default {
   template,
@@ -21,21 +21,17 @@ export default {
     UserMedia
   },
   data() {
-    return { 
+    return {
       useCamera: true,
       bus: new Vue()
     };
   },
   methods: {
     startMedia() {
-      this.bus.$emit('start');
+      this.bus.$emit("start");
     },
     onStartMedia(stream) {
-      this.$emit('set-media-stream', stream);
+      this.$emit("set-media-stream", stream);
     }
   }
 };
-
-
-
-

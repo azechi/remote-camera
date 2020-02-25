@@ -10,7 +10,7 @@ export default {
   data() {
     return {
       ready: true,
-      mediaElement: document.createElement("video"),
+      mediaElement: document.createElement("video")
     };
   },
   methods: {
@@ -24,16 +24,16 @@ export default {
       const stream = await new Promise(resolve => {
         e.oncanplay = () => {
           e.oncanplay = null;
-          resolve(e.captureStream()); 
+          resolve(e.captureStream());
         };
-        
-        if(e.readyState >= 3) {
+
+        if (e.readyState >= 3) {
           e.oncanplay = null;
           resolve(e.captureStream());
         }
-      });  
-      
-      this.$emit("start-media", stream)
+      });
+
+      this.$emit("start-media", stream);
     }
   },
   created() {
@@ -44,5 +44,4 @@ export default {
     // captureStreamのmutedではない、playerのmuted
     this.mediaElement.muted = true;
   }
-}
-
+};

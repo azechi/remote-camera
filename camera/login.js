@@ -1,8 +1,6 @@
-
 let auth0 = null;
 
 window.onload = async () => {
-  
   const config = await fetch("/auth_config.json").then(res => res.json());
   auth0 = await createAuth0Client({
     domain: config.domain,
@@ -11,10 +9,10 @@ window.onload = async () => {
   });
 
   if (await auth0.isAuthenticated()) {
-    throw "???"
+    throw "???";
     return;
   }
-  
+
   // handle callback
   const query = window.location.search;
   if (query.includes("code=") && query.includes("state=")) {
@@ -23,12 +21,11 @@ window.onload = async () => {
   } else {
     await auth0.loginWithRedirect();
     // sso session があったら待ち時間がある
-    console.log("くるくる")
+    console.log("くるくる");
     return;
   }
 
   const claims = await auth0.getIdTokenClaims();
   const id_token = claims.__raw;
   console.log(id_token);
-
-}
+};

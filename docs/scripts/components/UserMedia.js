@@ -17,7 +17,7 @@ export default {
         return;
       }
 
-      // getUserMedia(constraints); 
+      // getUserMedia(constraints);
       const constraints = {
         video: {
           facingMode: "user",
@@ -28,11 +28,10 @@ export default {
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      this.$emit("start-media", stream)
+      this.$emit("start-media", stream);
     }
   },
   created() {
     this.bus.$on("start", this.start);
   }
-
 };

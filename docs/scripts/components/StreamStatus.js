@@ -12,14 +12,14 @@ const template = `
 </div>
 `;
 
-import TrackStatus from './TrackStatus.js';
+import TrackStatus from "./TrackStatus.js";
 
 export default {
   template,
   components: {
     TrackStatus
   },
-  props: ['stream'],
+  props: ["stream"],
   data() {
     return {
       tracks: []
@@ -27,7 +27,7 @@ export default {
   },
   computed: {
     trackList() {
-      return this.tracks.flatMap((v,i)=>(i)?[{'separator':true}, v]:v);
+      return this.tracks.flatMap((v, i) => (i ? [{ separator: true }, v] : v));
     }
   },
   methods: {
@@ -51,4 +51,3 @@ export default {
     }
   }
 };
-
