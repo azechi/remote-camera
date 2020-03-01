@@ -15,10 +15,26 @@ const contentLoaded = new Promise(resolve => {
   }
 });
 
+const {display, clear} = (() => {
+
+  const a = document.createElement('a');
+
+  return {
+    display: code => {
+      a.href = code.verification_uri_complete;
+      a.text = code.verification_uri_complete;
+      document.getElementById('display').appendChild(a);
+    },
+    clear: () => a.remove()
+  };
+
+})();
+
 (async () => {
 
   if (!rt) {
-    rt = await getRefreshToken(code => contentLoaded.then(() => console.log(code)));
+    rt = await getRefreshToken(code => contentLoaded.then(() => display(code)));
+    clear();
     storage.setItem(key, rt);  
   }
 
