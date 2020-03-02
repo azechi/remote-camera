@@ -52,5 +52,12 @@ export default {
         this.remoteViewers.push(remote);
       }
     }
+  },
+  watch: {
+    mediaStream: {
+      handler(stream, oldValue) {
+        console.log(stream, oldValue);
+      }
+    }
   }
 };

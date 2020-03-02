@@ -13,6 +13,13 @@ export default {
     };
   },
   watch: {
+    stream: {
+      handler(stream, oldVal) {
+        const c = this.pc;
+        c.getSenders().forEach(s => c.removeTrack(s));
+        stream.clone().getTracks().forEach(t => c.addTrack(t, stream));
+      }
+    },
     pc: {
       immediate: true,
       async handler(c, oldVal) {
