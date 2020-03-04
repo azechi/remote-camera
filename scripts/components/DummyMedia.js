@@ -1,8 +1,22 @@
 const template = `
 <div>
-
+  <p>
+    w:{{width}} h:{{height}} aspect:{{width / height}}
+  </p>
 </div>
 `;
+
+function doneCanplay(elem) {
+  return new Promise(resolve => {
+
+    if(elem.readyState >= 3) {
+      resolve();
+      return;
+    }
+
+    elem.addEventListener('canplay', resolve, {once:true})
+  });
+}
 
 export default {
   template,
@@ -10,7 +24,10 @@ export default {
   data() {
     return {
       ready: true,
-      mediaElement: document.createElement("video")
+      mediaElement: document.createElement("video"),
+      width:0,
+      height:0,
+      src: "video.mp4"
     };
   },
   methods: {
@@ -18,30 +35,26 @@ export default {
       if (!this.enabled) {
         return;
       }
-      const e = this.mediaElement;
+      const elem = this.mediaElement;
 
-      await e.play();
-      const stream = await new Promise(resolve => {
-        e.oncanplay = () => {
-          e.oncanplay = null;
-          resolve(e.captureStream());
-        };
-
-        if (e.readyState >= 3) {
-          e.oncanplay = null;
-          resolve(e.captureStream());
-        }
-      });
-
+      await elem.play();
+      await doneCanplay(elem);
+      const stream = await elem.captureStream();
+      
       this.$emit("start-media", stream);
     }
   },
   created() {
     this.bus.$on("start", this.start);
 
-    this.mediaElement.loop = true;
-    this.mediaElement.src = "video.mp4";
+    const elem = this.mediaElement;
+    elem.loop = true;
+    elem.onloadedmetadata = () => {
+      this.width = elem.videoWidth;
+      this.height = elem.videoHeight;
+    };
+    elem.src = this.src;
     // captureStreamのmutedではない、playerのmuted
-    this.mediaElement.muted = true;
+    elem.muted = true;
   }
 };
