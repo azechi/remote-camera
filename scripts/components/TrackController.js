@@ -3,6 +3,9 @@ const template = `
   {{kind}}: {{readyState}} : {{id}} 
   <button v-if="!ended" v-on:click="toggleEnabled">{{enabled ? "disable" : "enable"}}</button>
   <button v-if="!ended" v-on:click="stop">stop</button>
+  <div>
+    <button v-on:click="apply">apply</button>
+  </div>
 </div>
 `;
 export default {
@@ -14,6 +17,9 @@ export default {
     }
   },
   methods: {
+    apply(){
+      this.$emit("apply", this.id, {width:300, frameRate:20});
+    },
     toggleEnabled() {
       this.$emit("set-enabled", this.id);
     },

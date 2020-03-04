@@ -16,6 +16,7 @@ const template = `
     v-for="track in tracks"
     v-bind:key="track.id"
     v-bind="track"
+    v-on:apply="onApplyTrackConstraints"
     v-on:stop="onStopTrack"
     v-on:set-enabled="onSetTrackEnabled"
     ></track-controller>
@@ -61,6 +62,10 @@ export default {
     }
   },
   methods: {
+    onApplyTrackConstraints: function(id, constraints) {
+      this.mediaStream.getTrackById(id).applyConstraints(constraints);
+      this.dirty = new MediaStream().id;
+    },
     onSetMediaStream: function(mediaStream) {
       this.mediaStream = mediaStream;
     },
