@@ -9,6 +9,9 @@ const template = `
     <user-media v-bind:bus="bus" v-bind:enabled="useCamera" v-on:start-media="onStartMedia"></user-media>
   </div>
   <button v-on:click="startMedia">start</button>
+  <div>
+    active: {{active}} [{{id}}]
+  </div>
 </div>
 `;
 
@@ -22,6 +25,7 @@ export default {
     DummyMedia,
     UserMedia
   },
+  props: ["active", "id"],
   data() {
     return {
       useCamera: false,
@@ -29,26 +33,11 @@ export default {
     };
   },
   methods: {
-    onStopTrack(id) {
-      console.log(id);
-    },
-    onSetTrackEnabled(id){
-      console.log(id);
-    },
     startMedia() {
       this.bus.$emit("start");
     },
     onStartMedia(stream) {
-      this.tracks = stream.getTracks();
       this.$emit("set-media-stream", stream);
-    }
-  },
-  watch: {
-    tracks: {
-      handler(n,o) {
-        o.forEach(t => t.stop());
-        console.log("videoTracks changing",n);
-      }
     }
   }
 };

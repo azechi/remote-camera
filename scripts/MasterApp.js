@@ -9,7 +9,7 @@ const template = `
   </template>
   
   <h2>Media Controller</h2>
-  <media-controller v-bind:stream="mediaStream" v-on:set-media-stream="onSetMediaStream"></media-controller>
+  <media-controller v-bind="mediaStream" v-on:set-media-stream="onSetMediaStream"></media-controller>
   <hr/>
   <h2>Track Controllers</h2>
   <track-controller 
@@ -46,13 +46,12 @@ export default {
     return {
       remoteViewers: [],
       mediaStream: new MediaStream(),
-      dirty: new MediaStream().id
+      touch: {}
     };
   },
   computed: {
     tracks() {
-      const _ = this.dirty;
-      console.log("touch tracks");
+      this.touch;
       return this.mediaStream.getTracks();
     },
     remoteViewerList() {
@@ -62,9 +61,12 @@ export default {
     }
   },
   methods: {
+    updateTracks() {
+      this.touch = {};
+    },
     onApplyTrackConstraints: function(id, constraints) {
       this.mediaStream.getTrackById(id).applyConstraints(constraints);
-      this.dirty = new MediaStream().id;
+      this.updateTracks();
     },
     onSetMediaStream: function(mediaStream) {
       this.mediaStream = mediaStream;
@@ -76,12 +78,12 @@ export default {
     },
     onStopTrack(id) {
       this.mediaStream.getTrackById(id).stop();
-      this.dirty = new MediaStream().id;
+      this.updateTracks();
     },
     onSetTrackEnabled(id) {
       const track = this.mediaStream.getTrackById(id);
       track.enabled = !track.enabled;
-      this.dirty = new MediaStream().id;
+      this.updateTracks();
     }
   },
   watch: {

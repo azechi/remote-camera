@@ -21,12 +21,15 @@ export default {
       const constraints = {
         video: {
           facingMode: "user",
-          aspectRatio: 1
+          width: 300,
+          aspectRatio: 1,
+          frameRate: 30,
         },
-        audio: true
+        audio: false
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      $dbg = stream;
 
       this.$emit("start-media", stream);
     }
