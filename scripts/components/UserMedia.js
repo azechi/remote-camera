@@ -8,7 +8,11 @@ export default {
   props: ["bus", "enabled"],
   data() {
     return {
-      ready: true
+      width: 300,
+      height: 300,
+      audio: true,
+      facingMode: "user",
+      frameRate: 15
     };
   },
   methods: {
@@ -20,17 +24,15 @@ export default {
       // getUserMedia(constraints);
       const constraints = {
         video: {
-          facingMode: "user",
-          width: 300,
-          aspectRatio: 1,
-          frameRate: 30,
+          facingMode: this.facingMode,
+          width: this.width,
+          height: this.height,
+          frameRate: this.frameRate,
         },
-        audio: false
+        audio: this.audio
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      $dbg = stream;
-
       this.$emit("start-media", stream);
     }
   },

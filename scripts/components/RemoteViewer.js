@@ -1,7 +1,7 @@
 const template = `
 <div style="font-family:monospace;font-size:smaller;">
   {{id}}: {{connectionState}}
-</div>
+  </div>
 `;
 
 export default {
@@ -13,13 +13,6 @@ export default {
     };
   },
   watch: {
-    stream: {
-      handler(stream, oldVal) {
-        const c = this.pc;
-        c.getSenders().forEach(s => c.removeTrack(s));
-        stream.clone().getTracks().forEach(t => c.addTrack(t, stream));
-      }
-    },
     pc: {
       immediate: true,
       async handler(c, oldVal) {
@@ -28,6 +21,8 @@ export default {
         c.onconnectionstatechange = () => {
           this.connectionState = c.connectionState;
         };
+
+        //c.addEventListener('negotiationneeded', e => console.log(e));
 
         await new Promise(resolve => {
           const h = () => {
@@ -40,8 +35,7 @@ export default {
           h();
         });
 
-        const stream = this.stream.clone();
-        stream.getTracks().forEach(t => c.addTrack(t, stream));
+        this.$emit("connected", this.id, c);
       }
     }
   }

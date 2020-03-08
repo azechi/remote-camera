@@ -54,7 +54,8 @@ const {display, clear} = (() => {
     const pc = new LANPeerConnection();
 
     pc.ontrack = e => {
-      stream.addTrack(e.track);
+      const track = e.track;
+      stream.addTrack(track);
     };
 
     let flg = false;

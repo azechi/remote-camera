@@ -1,17 +1,19 @@
 const template = `
 <div id="app" v-cloak>
   <hub-connection v-on:receive-offer="onReceiveOffer"></hub-connection>
-
-  <h2>Remote Viewers</h2>
+  
+  <h2>Remote Peers</h2>
   <template v-for="item of remoteViewerList">
     <hr v-if="item.separator" />
-    <remote-viewer v-else v-bind="item" v-bind:stream="mediaStream"></remote-viewer>
+    <remote-viewer v-else 
+      v-bind="item" 
+      v-bind:stream="mediaStream"
+      v-on:connected="onPeerConnected"
+      ></remote-viewer>
   </template>
   
   <h2>Media Controller</h2>
   <media-controller v-bind="mediaStream" v-on:set-media-stream="onSetMediaStream"></media-controller>
-  <hr/>
-  <h2>Track Controllers</h2>
   <track-controller 
     v-for="track in tracks"
     v-bind:key="track.id"
@@ -21,16 +23,16 @@ const template = `
     v-on:set-enabled="onSetTrackEnabled"
     ></track-controller>
   <hr/>
-  <h2>Local Viewer</h2>
-  <local-viewer v-bind:stream="mediaStream"></local-viewer>
+  <div>
+    <video controls autoplay :srcObject.prop="activeStream"></video>
+  </div>
 </div>
 `;
 
 import Vue from "./vue.js";
-import MediaController from "./components/MediaController.js";
-import LocalViewer from "./components/LocalViewer.js";
 import HubConnection from "./components/HubConnection.js";
 import RemoteViewer from "./components/RemoteViewer.js";
+import MediaController from "./components/MediaController.js";
 import TrackController from "./components/TrackController.js";
 
 export default {
@@ -39,7 +41,6 @@ export default {
     HubConnection,
     RemoteViewer,
     MediaController,
-    LocalViewer,
     TrackController
   },
   data() {
@@ -49,7 +50,14 @@ export default {
       touch: {}
     };
   },
+  created() {
+    $dbg = this; 
+  },
   computed: {
+    activeStream() {
+      this.touch;
+      return this.mediaStream.active ? this.mediaStream: null; 
+    },
     tracks() {
       this.touch;
       return this.mediaStream.getTracks();
@@ -72,10 +80,16 @@ export default {
       this.mediaStream = mediaStream;
     },
     onReceiveOffer: function(remote) {
+      /* remote {id, pc} */
       if (!this.remoteViewers.some(x => x.id == remote.id)) {
         this.remoteViewers.push(remote);
       }
     },
+    onPeerConnected: function(id, pc) {
+      this.mediaStream.getTracks().forEach(t => pc.addTrack(t, this.mediaStream));
+      pc.addEventListener('negotiationneeded', () => {console.log(pc)});
+    }
+    ,
     onStopTrack(id) {
       this.mediaStream.getTrackById(id).stop();
       this.updateTracks();
@@ -89,7 +103,11 @@ export default {
   watch: {
     mediaStream: {
       handler(stream, oldValue) {
+
         oldValue.getTracks().forEach(track => track.stop());
+        this.remoteViewers.forEach(({pc}) => pc.getSenders().forEach(sender => pc.removeTrack(sender)));
+        stream.getTracks().forEach(track => this.remoteViewers.forEach(({pc})=> pc.addTrack(track, stream)));
+
       }
     }
   }

@@ -21,10 +21,10 @@ const gen = async vm => {
     idTokenFactory: () => auth.getIdTokenClaims().then(x => x.__raw)
   });
 
-  vm.state = "connecting...";
+  vm.state = "hub connecting...";
 
   const connected = new Promise(resolve => {
-    hub.on("offer", ({ from, sessionDescription }) => {
+    hub.on("offer", async ({ from, sessionDescription }) => {
       const pc = new LANPeerConnection();
       pc.send = async sessionDescription => {
         await sendToHub({
@@ -39,14 +39,14 @@ const gen = async vm => {
         });
       };
 
-      pc.setRemoteDescription(sessionDescription);
+      await pc.setRemoteDescription(sessionDescription);
 
       vm.$emit("receive-offer", { id: from, pc });
     });
   });
 
   await hub.start();
-  vm.state = `connected [${hub.connectionId}]`;
+  vm.state = `hub connected [${hub.connectionId}]`;
 };
 
 export default {
