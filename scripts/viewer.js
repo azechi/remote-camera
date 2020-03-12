@@ -101,7 +101,7 @@ const {display, clear} = (() => {
     });
   });
 
-  const pc = await connected;
+  const pc = $dbg.pc = await connected;
 
   hub.stop();
 })();
