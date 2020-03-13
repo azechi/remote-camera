@@ -18,7 +18,9 @@ export default (async () => {
     ])
   ) {
     await auth.handleRedirectCallback();
-    window.history.replaceState({}, document.title, location.pathname);
+    url.searchParams.delete("code");
+    url.searchParams.delete("state");
+    window.history.replaceState({}, document.title, url.href);
   }
 
   if (!(await auth.isAuthenticated())) {

@@ -3,12 +3,12 @@ import { LANPeerConnection } from "./lanpeerconnection.js";
 import { buildHubConnection } from "./hubconnection.js";
 
 
-const toGetUserMediaConstraints = {
+const defaultUserMediaConstraints = {
   video: true,
   audio: true
 };
 
-const videoTrackConstraints = {
+const defaultVideoTrackConstraints = {
   frameRate: 15,
   aspectRatio: 1,
   width: 300
@@ -73,18 +73,24 @@ const viewerConnected = (async () =>{
 // main
 (async () => {
   const stream = $dbg.stream = await navigator.mediaDevices.getUserMedia(
-    toGetUserMediaConstraints
+    defaultUserMediaConstraints
   );
 
   // https://crbug.com/711524
-  new Promise(r => setTimeout(r, 1000));
+  await new Promise(r => setTimeout(r, 1000));
 
-  await stream.getVideoTracks()[0].applyConstraints(videoTrackConstraints);
-
+  await stream.getVideoTracks()[0].applyConstraints(defaultVideoTrackConstraints);
+  
+  window.addEventListener("hashchange", async e => {
+    const p = JSON.parse(decodeURIComponent(new URL(e.newURL).hash.substring(1)));
+    console.log("hashchanged", p);
+    await stream.getVideoTracks()[0].applyConstraints(p);
+  })
+  
   await contentLoaded;
 
   const elem = {
-    button: document.getElementById("button"),
+    //button: document.getElementById("button"),
     pre: document.getElementById("pre"),
     video: document.getElementById("video")
   };
@@ -95,16 +101,11 @@ const viewerConnected = (async () =>{
   });
 
   elem.video.srcObject = stream;
-
   const viewer = await viewerConnected;
-  console.log(`${viewer.signalingState} ${viewer.connectionState}`)
 
+  // peerconnection connectedの直後にaddTransceiverしてもnegotiationneededが発火しないから1秒待つ
   await new Promise(r => setTimeout(r, 1000));
-  console.log("connected");
-  console.log(`${viewer.signalingState} ${viewer.connectionState}`)
-  //stream.getTracks().forEach(track => viewer.addTrack(track, stream));
 
   stream.getTracks().forEach(track => viewer.addTransceiver(track, {stream, direction:"sendonly"}));
-
 
 })();
