@@ -27,7 +27,7 @@ export default {
           facingMode: this.facingMode,
           width: this.width,
           height: this.height,
-          frameRate: this.frameRate,
+          frameRate: this.frameRate
         },
         audio: this.audio
       };

@@ -29,7 +29,7 @@ export default {
   data() {
     return {
       useCamera: false,
-      bus: new Vue(),
+      bus: new Vue()
     };
   },
   methods: {

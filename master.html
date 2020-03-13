@@ -11,16 +11,14 @@
     </script>
     <script type="module" src="scripts/master.js"></script>
     <style>
+      [v-cloak] > * {
+        display: none;
+      }
 
-[v-cloak] > *  {
-  display: none;
-}
-
-[v-cloak]::before { 
-  content: "component loading...";
-  font-size: 5em;
-}
-
+      [v-cloak]::before {
+        content: "component loading...";
+        font-size: 5em;
+      }
     </style>
   </head>
   <body>

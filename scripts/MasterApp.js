@@ -51,12 +51,12 @@ export default {
     };
   },
   created() {
-    $dbg = this; 
+    $dbg = this;
   },
   computed: {
     activeStream() {
       this.touch;
-      return this.mediaStream.active ? this.mediaStream: null; 
+      return this.mediaStream.active ? this.mediaStream : null;
     },
     tracks() {
       this.touch;
@@ -86,10 +86,13 @@ export default {
       }
     },
     onPeerConnected: function(id, pc) {
-      this.mediaStream.getTracks().forEach(t => pc.addTrack(t, this.mediaStream));
-      pc.addEventListener('negotiationneeded', () => {console.log(pc)});
-    }
-    ,
+      this.mediaStream
+        .getTracks()
+        .forEach(t => pc.addTrack(t, this.mediaStream));
+      pc.addEventListener("negotiationneeded", () => {
+        console.log(pc);
+      });
+    },
     onStopTrack(id) {
       this.mediaStream.getTrackById(id).stop();
       this.updateTracks();
@@ -103,11 +106,15 @@ export default {
   watch: {
     mediaStream: {
       handler(stream, oldValue) {
-
         oldValue.getTracks().forEach(track => track.stop());
-        this.remoteViewers.forEach(({pc}) => pc.getSenders().forEach(sender => pc.removeTrack(sender)));
-        stream.getTracks().forEach(track => this.remoteViewers.forEach(({pc})=> pc.addTrack(track, stream)));
-
+        this.remoteViewers.forEach(({ pc }) =>
+          pc.getSenders().forEach(sender => pc.removeTrack(sender))
+        );
+        stream
+          .getTracks()
+          .forEach(track =>
+            this.remoteViewers.forEach(({ pc }) => pc.addTrack(track, stream))
+          );
       }
     }
   }

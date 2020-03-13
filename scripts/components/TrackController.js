@@ -17,8 +17,8 @@ export default {
     }
   },
   methods: {
-    apply(){
-      this.$emit("apply", this.id, {width:300, frameRate:20});
+    apply() {
+      this.$emit("apply", this.id, { width: 300, frameRate: 20 });
     },
     toggleEnabled() {
       this.$emit("set-enabled", this.id);

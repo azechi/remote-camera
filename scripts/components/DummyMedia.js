@@ -8,13 +8,12 @@ const template = `
 
 function doneCanplay(elem) {
   return new Promise(resolve => {
-
-    if(elem.readyState >= 3) {
+    if (elem.readyState >= 3) {
       resolve();
       return;
     }
 
-    elem.addEventListener('canplay', resolve, {once:true})
+    elem.addEventListener("canplay", resolve, { once: true });
   });
 }
 
@@ -25,8 +24,8 @@ export default {
     return {
       ready: true,
       mediaElement: document.createElement("video"),
-      width:0,
-      height:0,
+      width: 0,
+      height: 0,
       src: "video.mp4"
     };
   },
@@ -40,7 +39,7 @@ export default {
       await elem.play();
       await doneCanplay(elem);
       const stream = await elem.captureStream();
-      
+
       this.$emit("start-media", stream);
     }
   },

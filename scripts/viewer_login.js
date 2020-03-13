@@ -22,7 +22,6 @@ async function getIdToken(refreshToken) {
   return (await getTokenUsingRefreshToken(refreshToken)).id_token;
 }
 
-
 async function getTokenUsingRefreshToken(refreshToken) {
   const response = await callApi("token", {
     grant_type: "refresh_token",
@@ -72,7 +71,6 @@ async function getTokenUsingDeviceCode(deviceCodeResponse) {
     throw await response.json();
   }
 }
-
 
 // new URLSearchParams()
 // fetch()
