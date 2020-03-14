@@ -15,11 +15,64 @@ const defaultVideoTrackConstraints = {
 
 const contentLoaded = new Promise(resolve => {
   if (document.readyState == "loading") {
-    resolve();
+    document.addEventListener("DOMContentLoaded", resolve, { once: true });
+  } else {
+    resolve({
+      streamActivate: document.getElementById("button_stream"),
+      videoMute: document.getElementById("button_videoTrack"),
+      audioMute: document.getElementById("button_audioTrack"),
+      previewShow: document.getElementById("button_preview"),
+      connect: document.getElementById("button_connection"),
+      video: document.getElementById("video"),
+      connection: document.getElementById("connection")
+    });
     return;
   }
-  document.addEventListener("DOMContentLoaded", resolve, { once: true });
 });
+
+
+let _spawnResolve;
+let _spawned = new Promise(resolve => {
+  _spawnResolve = resolve;
+});
+async function* spawnStream() {
+  while (true){
+    const o = await _spawned;
+    _spawned = new Promise(resolve => {
+      _spawnResolve = resolve;
+    });
+    yield await o;
+  }
+}
+
+(async () => {
+
+  let stream = new MediaStream();
+  let pc;
+
+  const view = await contentLoaded;
+
+  // fire and forget
+  (async () => {
+    for await (const s of spawnStream()) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = s;
+    }
+  })();
+
+  view.streamActivate.addEventListener("click", async ({currentTarget:e})=>{
+    if (stream && stream.active) {
+      stream.getTracks().forEach(t => t.stop());
+    } else {
+      const s = await navigator.mediaDevices.getUserMedia(defaultUserMediaConstraints);
+      await new Promise(r => setTimeout(r, 1000));
+      s.getVideoTracks()[0].applyConstraints(defaultVideoTrackConstraints);
+      _spawnResolve(s);
+    }
+  });
+
+})();
+
 
 const viewerConnected = (async () => {
   const auth = ($dbg.auth = await auth0);
@@ -66,6 +119,11 @@ const viewerConnected = (async () => {
   return connected;
 })();
 
+(async()=>{
+  await contentLoaded;
+
+})();
+
 // main
 (async () => {
   const stream = ($dbg.stream = await navigator.mediaDevices.getUserMedia(
@@ -80,9 +138,6 @@ const viewerConnected = (async () => {
     .applyConstraints(defaultVideoTrackConstraints);
 
   window.addEventListener("hashchange", async e => {
-    const p = JSON.parse(
-      decodeURIComponent(new URL(e.newURL).hash.substring(1))
-    );
     console.log("hashchanged", p);
     await stream.getVideoTracks()[0].applyConstraints(p);
   });
@@ -90,14 +145,12 @@ const viewerConnected = (async () => {
   await contentLoaded;
 
   const elem = {
-    //button: document.getElementById("button"),
-    pre: document.getElementById("pre"),
     video: document.getElementById("video")
   };
 
   elem.video.addEventListener("loadedmetadata", () => {
     const s = `width:${elem.video.videoWidth}, height:${elem.video.videoHeight}`;
-    elem.pre.textContent = s;
+    console.log(s);
   });
 
   elem.video.srcObject = stream;
@@ -111,4 +164,4 @@ const viewerConnected = (async () => {
     .forEach(track =>
       viewer.addTransceiver(track, { stream, direction: "sendonly" })
     );
-})();
+});

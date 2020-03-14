@@ -3,25 +3,51 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-
     <script src="https://cdn.auth0.com/js/auth0-spa-js/1.6.3/auth0-spa-js.production.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@3.1.0/dist/browser/signalr.min.js"></script>
     <script>
       const $dbg = {};
     </script>
     <script type="module" src="scripts/camera.js"></script>
+    <style type="text/css">
+
+button {
+  min-height: 42px;
+  min-width: 60px;
+  margin: 0 4px 8px 0px;
+}
+
+pre {
+  display: inline;
+}
+
+    </style>
   </head>
   <body>
     <div>
-      <pre id="pre"></pre>
-      <video
-        id="video"
-        autoplay
-        muted
-        controls
-        playsinline
-        style="max-width: 100%; max-height: 80vh;"
-      ></video>
+      <button id="button_connection" data-text="disconnect">connect</button>
+      <pre id="connection">-</pre>
+    </div>
+    <div>
+      <div>
+        <button id="button_stream" data-text="stop">start</button>
+        <button id="button_videoTrack" data-text="mute cam">unmute cam</button>
+        <button id="button_audioTrack" data-text="mute mic">unmute mic</button>
+      </div>
+      <div>
+        <div>
+          <button id="button_preview" data-text="hide preview">show preview</button>
+        </div>
+        <video
+          hidden
+          id="video"
+          autoplay
+          muted
+          controls
+          playsinline
+          style="max-width: 100%; max-height: 80vh;"
+          ></video>
+      </div>
     </div>
   </body>
 </html>
