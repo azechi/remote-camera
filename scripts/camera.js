@@ -21,43 +21,25 @@ const data = (() => {
 (async () => {
   await contentLoaded;
 
-  const button = document.getElementById("button_connection");
-  const connectionStatus = document.getElementById("connection");
+  const context = (() => {
+    const button = document.getElementById("button_connection");
+    const connectionStatus = document.getElementById("connection");
+    return {
+      button,
+      writeStatus: text => {
+        connectionStatus.textContent = text;
+      }
+    };
+  })();
 
-  const writeStatus = text => {
-    connectionStatus.textContent = text;
-  };
-
-  const start = async function*(
-    context,
-    handlers,
-    initialLabel = "initialize"
-  ) {
-    const _context = Object.assign(
-      { $emit: (...args) => resolve(...args) },
-      context
-    );
-
-    let resolve;
-    let fulfilled;
-
-    yield [initialLabel, _context];
-    while (true) {
-      fulfilled = new Promise(r => {
-        resolve = r;
-      });
-      yield [await fulfilled, _context];
-    }
-  };
-
-  const initializeHandler = ctx => {
+  const initializeHandler = (ctx, emit) => {
     ctx.writeStatus("disconnected");
     ctx.button.disabled = false;
     ctx.button.dataset.command = "connect";
     ctx.button.textContent = "connect";
     ctx.button.addEventListener("click", ({ currentTarget: e }) => {
       e.disabled = true;
-      ctx.$emit(e.dataset.command);
+      emit(e.dataset.command);
     });
   };
 
@@ -87,20 +69,40 @@ const data = (() => {
     */
   };
 
-  const listener = start({ button, writeStatus });
-  const handlers = new Map([
-    ["initialize", initializeHandler],
-    ["connect", connectHandler],
-    ["disconnect", disconnectHandler]
-  ]);
+  loop(
+    context,
+    [
+      ["initialize", initializeHandler],
+      ["connect", connectHandler],
+      ["disconnect", disconnectHandler]
+    ],
+    "initialize"
+  );
+})();
 
-  for await (const [label, context] of listener) {
-    if (!handlers.has(label)) {
+async function loop(context, handlers, initialLabel) {
+  const listen = async function*() {
+    let resolve;
+
+    function emit(...args) {
+      resolve(...args);
+    }
+
+    yield [initialLabel, context, emit];
+    while (true) {
+      yield [await new Promise(rslv => (resolve = rslv)), context];
+    }
+  };
+
+  const _handlers = new Map(handlers);
+
+  for await (const [label, context, emit] of listen()) {
+    if (!_handlers.has(label)) {
       throw `"${label}" handler not found`;
     }
-    handlers.get(label)(context);
+    _handlers.get(label)(context, emit);
   }
-})();
+}
 
 const defaultUserMediaConstraints = {
   video: true,
@@ -219,10 +221,6 @@ const viewerConnected = async hubConnectedCallback => {
   hubConnectedCallback();
   return connected;
 };
-
-(async () => {
-  await contentLoaded;
-})();
 
 // main
 async () => {
