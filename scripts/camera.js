@@ -2,6 +2,106 @@ import auth0 from "./login.js";
 import { LANPeerConnection } from "./lanpeerconnection.js";
 import { buildHubConnection } from "./hubconnection.js";
 
+const contentLoaded = new Promise(resolve => {
+  if (document.readyState == "loading") {
+    document.addEventListener("DOMContentLoaded", resolve, { once: true });
+  } else {
+    resolve();
+  }
+});
+
+const data = (() => {
+  let connection = new RTCPeerConnection();
+  let stream = new MediaStream();
+
+  return {};
+})();
+
+/* connection */
+(async () => {
+  await contentLoaded;
+
+  const button = document.getElementById("button_connection");
+  const connectionStatus = document.getElementById("connection");
+
+  const writeStatus = text => {
+    connectionStatus.textContent = text;
+  };
+
+  const start = async function*(
+    context,
+    handlers,
+    initialLabel = "initialize"
+  ) {
+    const _context = Object.assign(
+      { $emit: (...args) => resolve(...args) },
+      context
+    );
+
+    let resolve;
+    let fulfilled;
+
+    yield [initialLabel, _context];
+    while (true) {
+      fulfilled = new Promise(r => {
+        resolve = r;
+      });
+      yield [await fulfilled, _context];
+    }
+  };
+
+  const initializeHandler = ctx => {
+    ctx.writeStatus("disconnected");
+    ctx.button.disabled = false;
+    ctx.button.dataset.command = "connect";
+    ctx.button.textContent = "connect";
+    ctx.button.addEventListener("click", ({ currentTarget: e }) => {
+      e.disabled = true;
+      ctx.$emit(e.dataset.command);
+    });
+  };
+
+  const connectHandler = ctx => {
+    /* 接続を開始する */
+    ctx.writeStatus("connecting");
+    ctx.button.disabled = false;
+    ctx.button.dataset.command = "disconnect";
+    ctx.button.textContent = "disconnect";
+
+    /* fire and forget */
+    viewerConnected(() => ctx.writeStatus("pending")).then(pc => {
+      ctx.writeStatus("connected");
+      console.log("connected", pc);
+    });
+  };
+
+  const disconnectHandler = ctx => {
+    ctx.writeStatus("disconnected");
+    ctx.button.disabled = false;
+    ctx.button.dataset.command = "connect";
+    ctx.button.textContent = "connect";
+    /* 
+    if (pc) {
+      pc.disconnect();
+    }
+    */
+  };
+
+  const listener = start({ button, writeStatus });
+  const handlers = new Map([
+    ["initialize", initializeHandler],
+    ["connect", connectHandler],
+    ["disconnect", disconnectHandler]
+  ]);
+
+  for await (const [label, context] of listener) {
+    if (!handlers.has(label)) {
+      throw `"${label}" handler not found`;
+    }
+    handlers.get(label)(context);
+  }
+})();
+
 const defaultUserMediaConstraints = {
   video: true,
   audio: true
@@ -13,6 +113,7 @@ const defaultVideoTrackConstraints = {
   width: 300
 };
 
+/*
 const contentLoaded = new Promise(resolve => {
   if (document.readyState == "loading") {
     document.addEventListener("DOMContentLoaded", resolve, { once: true });
@@ -29,8 +130,9 @@ const contentLoaded = new Promise(resolve => {
     return;
   }
 });
+*/
 
-
+/*
 let _spawnResolve;
 let _spawned = new Promise(resolve => {
   _spawnResolve = resolve;
@@ -44,7 +146,9 @@ async function* spawnStream() {
     yield await o;
   }
 }
+*/
 
+/*
 (async () => {
 
   let stream = new MediaStream();
@@ -72,12 +176,10 @@ async function* spawnStream() {
   });
 
 })();
+*/
 
-
-const viewerConnected = (async () => {
+const viewerConnected = async hubConnectedCallback => {
   const auth = ($dbg.auth = await auth0);
-
-  console.log("login", await auth.getIdTokenClaims().then(x => x.name));
 
   const { hub, send: sendToHub } = await buildHubConnection({
     serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
@@ -114,18 +216,16 @@ const viewerConnected = (async () => {
   });
 
   await hub.start();
-  console.log(`hub connected [${hub.connectionId}]`);
-
+  hubConnectedCallback();
   return connected;
-})();
+};
 
-(async()=>{
+(async () => {
   await contentLoaded;
-
 })();
 
 // main
-(async () => {
+async () => {
   const stream = ($dbg.stream = await navigator.mediaDevices.getUserMedia(
     defaultUserMediaConstraints
   ));
@@ -164,4 +264,4 @@ const viewerConnected = (async () => {
     .forEach(track =>
       viewer.addTransceiver(track, { stream, direction: "sendonly" })
     );
-});
+};
