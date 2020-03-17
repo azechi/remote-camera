@@ -3,14 +3,15 @@ import { LANPeerConnection } from "./lanpeerconnection.js";
 import { buildHubConnection } from "./hubconnection.js";
 
 const contentLoaded = new Promise(resolve => {
-
   const f = () => {
     resolve({
       document: {
         getElementById: document.getElementById.bind(document)
       },
       mediaDevices: {
-        getUserMedia: navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+        getUserMedia: navigator.mediaDevices.getUserMedia.bind(
+          navigator.mediaDevices
+        )
       }
     });
   };
@@ -18,7 +19,7 @@ const contentLoaded = new Promise(resolve => {
   if (document.readyState == "loading") {
     document.addEventListener("DOMContentLoaded", f, { once: true });
   } else {
-    f()
+    f();
   }
 });
 
@@ -28,7 +29,6 @@ const data = (() => {
 
   return {};
 })();
-
 
 async function loop(context, handlers, initialLabel) {
   const listen = async function*() {
@@ -57,7 +57,7 @@ async function loop(context, handlers, initialLabel) {
 
 /* connection */
 (async () => {
-  const {document} = await contentLoaded;
+  const { document } = await contentLoaded;
 
   const context = (() => {
     const button = document.getElementById("button_connection");
@@ -129,61 +129,59 @@ const defaultVideoTrackConstraints = {
   width: 300
 };
 
-
-
-
-
 /* user media */
-(async ()=>{
-  const {document, mediaDevices} = await contentLoaded;
+(async () => {
+  const { document, mediaDevices } = await contentLoaded;
 
   let _stream = new MediaStream();
 
   const context = {
-    btn_start : document.getElementById("button_stream"),
-    btn_videoMute : document.getElementById("button_videoTrack"),
-    btn_audioMute : document.getElementById("button_audioTrack"),
+    btn_start: document.getElementById("button_stream"),
+    btn_videoMute: document.getElementById("button_videoTrack"),
+    btn_audioMute: document.getElementById("button_audioTrack"),
     btn_show: document.getElementById("button_preview"),
     video: document.getElementById("video"),
     get stream() {
       return _stream;
     },
-    set stream(val){
+    set stream(val) {
       _stream = val;
-      this.video.srcObject = !(this.video.dataset.alt == 'true') ? val : null;
+      this.video.srcObject = !(this.video.dataset.alt == "true") ? val : null;
     }
   };
 
   const init = (ctx, emit) => {
-    ctx.btn_start.addEventListener('click', ({currentTarget:e})=>{
+    ctx.btn_start.addEventListener("click", ({ currentTarget: e }) => {
       e.disabled = true;
-      emit((e.dataset.alt == 'true')?'stop':'start');
+      emit(e.dataset.alt == "true" ? "stop" : "start");
     });
 
     ctx.btn_videoMute.disabled = true;
-    ctx.btn_videoMute.addEventListener('click', ({currentTarget:e}) => {
+    ctx.btn_videoMute.addEventListener("click", ({ currentTarget: e }) => {
       const track = ctx.stream.getVideoTracks()[0];
       e.dataset.alt = !(track.enabled = !track.enabled);
     });
 
     ctx.btn_audioMute.disabled = true;
-    ctx.btn_audioMute.addEventListener('click', ({currentTarget:e}) => {
+    ctx.btn_audioMute.addEventListener("click", ({ currentTarget: e }) => {
       const track = ctx.stream.getAudioTracks()[0];
       e.dataset.alt = !(track.enabled = !track.enabled);
     });
 
-    ctx.btn_show.addEventListener('click', ({currentTarget:e}) => {
-      const visible = !(e.dataset.alt == 'true');
+    ctx.btn_show.addEventListener("click", ({ currentTarget: e }) => {
+      const visible = !(e.dataset.alt == "true");
       e.dataset.alt = visible;
       ctx.video.style.display = visible ? "initial" : "none";
       ctx.video.srcObject = visible ? ctx.stream : null;
     });
-  }
+  };
 
   const start = async (ctx, emit) => {
     const stream = await mediaDevices.getUserMedia(defaultUserMediaConstraints);
     await new Promise(r => setTimeout(r, 1000));
-    await stream.getVideoTracks()[0].applyConstraints(defaultVideoTrackConstraints);
+    await stream
+      .getVideoTracks()[0]
+      .applyConstraints(defaultVideoTrackConstraints);
     ctx.stream = stream;
     ctx.btn_start.dataset.alt = true;
     ctx.btn_start.disabled = false;
@@ -198,7 +196,7 @@ const defaultVideoTrackConstraints = {
   const stop = ctx => {
     ctx.stream.getTracks().forEach(track => track.stop());
     ctx.btn_start.dataset.alt = false;
-    
+
     ctx.btn_start.disabled = false;
     ctx.btn_videoMute.disabled = true;
     ctx.btn_audioMute.disabled = true;
@@ -211,8 +209,8 @@ const defaultVideoTrackConstraints = {
       ["start", start],
       ["stop", stop]
     ],
-    "init");
-
+    "init"
+  );
 })();
 
 /*
