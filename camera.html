@@ -21,31 +21,60 @@ pre {
   display: inline;
 }
 
+
+button > * { 
+  display: none;
+}
+
+button:not([data-alt='true']) > .default {
+  display: initial;
+}
+
+button[data-alt='true'] > .alternate {
+  display: initial;
+}
+
+
+
     </style>
   </head>
   <body>
     <div>
-      <button id="button_connection" data-text="disconnect">connect</button>
+      <button id="button_connection">
+        <span class="default">connect</span>
+        <span class="alternate">disconnect</span>
+      </button>
       <pre id="connection">-</pre>
     </div>
     <div>
       <div>
-        <button id="button_stream" data-text="stop">start</button>
-        <button id="button_videoTrack" data-text="mute cam">unmute cam</button>
-        <button id="button_audioTrack" data-text="mute mic">unmute mic</button>
+        <button id="button_stream">
+          <span class="default">start</span>
+          <span class="alternate">stop</span>
+        </button>
+        <button id="button_videoTrack">
+          <span class="default">mute camera</span>
+          <span class="alternate">unmute camera</span>
+        </button>
+        <button id="button_audioTrack">
+          <span class="default">mute mic</span>
+          <span class="alternate">unmute mic</span>
+        </button>
       </div>
       <div>
         <div>
-          <button id="button_preview" data-text="hide preview">show preview</button>
+          <button id="button_preview">
+            <span class="default">show preview</span>
+            <span class="alternate">hide preview</span>
+          </button>
         </div>
         <video
-          hidden
           id="video"
           autoplay
           muted
           controls
           playsinline
-          style="max-width: 100%; max-height: 80vh;"
+          style="display:none;max-width: 100%; max-height: 80vh;"
           ></video>
       </div>
     </div>

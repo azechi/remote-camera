@@ -3,10 +3,22 @@ import { LANPeerConnection } from "./lanpeerconnection.js";
 import { buildHubConnection } from "./hubconnection.js";
 
 const contentLoaded = new Promise(resolve => {
+
+  const f = () => {
+    resolve({
+      document: {
+        getElementById: document.getElementById.bind(document)
+      },
+      mediaDevices: {
+        getUserMedia: navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+      }
+    });
+  };
+
   if (document.readyState == "loading") {
-    document.addEventListener("DOMContentLoaded", resolve, { once: true });
+    document.addEventListener("DOMContentLoaded", f, { once: true });
   } else {
-    resolve();
+    f()
   }
 });
 
@@ -17,9 +29,35 @@ const data = (() => {
   return {};
 })();
 
+
+async function loop(context, handlers, initialLabel) {
+  const listen = async function*() {
+    let resolve;
+
+    function emit(...args) {
+      resolve(...args);
+    }
+
+    yield [initialLabel, context, emit];
+    while (true) {
+      yield [await new Promise(rslv => (resolve = rslv)), context];
+    }
+  };
+
+  const _handlers = new Map(handlers);
+
+  for await (const [label, context, emit] of listen()) {
+    if (!_handlers.has(label)) {
+      throw `"${label}" handler not found`;
+    }
+    console.log(label);
+    await _handlers.get(label)(context, emit);
+  }
+}
+
 /* connection */
 (async () => {
-  await contentLoaded;
+  const {document} = await contentLoaded;
 
   const context = (() => {
     const button = document.getElementById("button_connection");
@@ -80,30 +118,6 @@ const data = (() => {
   );
 })();
 
-async function loop(context, handlers, initialLabel) {
-  const listen = async function*() {
-    let resolve;
-
-    function emit(...args) {
-      resolve(...args);
-    }
-
-    yield [initialLabel, context, emit];
-    while (true) {
-      yield [await new Promise(rslv => (resolve = rslv)), context];
-    }
-  };
-
-  const _handlers = new Map(handlers);
-
-  for await (const [label, context, emit] of listen()) {
-    if (!_handlers.has(label)) {
-      throw `"${label}" handler not found`;
-    }
-    _handlers.get(label)(context, emit);
-  }
-}
-
 const defaultUserMediaConstraints = {
   video: true,
   audio: true
@@ -115,40 +129,91 @@ const defaultVideoTrackConstraints = {
   width: 300
 };
 
-/*
-const contentLoaded = new Promise(resolve => {
-  if (document.readyState == "loading") {
-    document.addEventListener("DOMContentLoaded", resolve, { once: true });
-  } else {
-    resolve({
-      streamActivate: document.getElementById("button_stream"),
-      videoMute: document.getElementById("button_videoTrack"),
-      audioMute: document.getElementById("button_audioTrack"),
-      previewShow: document.getElementById("button_preview"),
-      connect: document.getElementById("button_connection"),
-      video: document.getElementById("video"),
-      connection: document.getElementById("connection")
-    });
-    return;
-  }
-});
-*/
 
-/*
-let _spawnResolve;
-let _spawned = new Promise(resolve => {
-  _spawnResolve = resolve;
-});
-async function* spawnStream() {
-  while (true){
-    const o = await _spawned;
-    _spawned = new Promise(resolve => {
-      _spawnResolve = resolve;
+
+
+
+/* user media */
+(async ()=>{
+  const {document, mediaDevices} = await contentLoaded;
+
+  let _stream = new MediaStream();
+
+  const context = {
+    btn_start : document.getElementById("button_stream"),
+    btn_videoMute : document.getElementById("button_videoTrack"),
+    btn_audioMute : document.getElementById("button_audioTrack"),
+    btn_show: document.getElementById("button_preview"),
+    video: document.getElementById("video"),
+    get stream() {
+      return _stream;
+    },
+    set stream(val){
+      _stream = val;
+      this.video.srcObject = !(this.video.dataset.alt == 'true') ? val : null;
+    }
+  };
+
+  const init = (ctx, emit) => {
+    ctx.btn_start.addEventListener('click', ({currentTarget:e})=>{
+      e.disabled = true;
+      emit((e.dataset.alt == 'true')?'stop':'start');
     });
-    yield await o;
+
+    ctx.btn_videoMute.disabled = true;
+    ctx.btn_videoMute.addEventListener('click', ({currentTarget:e}) => {
+      const track = ctx.stream.getVideoTracks()[0];
+      e.dataset.alt = !(track.enabled = !track.enabled);
+    });
+
+    ctx.btn_audioMute.disabled = true;
+    ctx.btn_audioMute.addEventListener('click', ({currentTarget:e}) => {
+      const track = ctx.stream.getAudioTracks()[0];
+      e.dataset.alt = !(track.enabled = !track.enabled);
+    });
+
+    ctx.btn_show.addEventListener('click', ({currentTarget:e}) => {
+      const visible = !(e.dataset.alt == 'true');
+      e.dataset.alt = visible;
+      ctx.video.style.display = visible ? "initial" : "none";
+      ctx.video.srcObject = visible ? ctx.stream : null;
+    });
   }
-}
-*/
+
+  const start = async (ctx, emit) => {
+    const stream = await mediaDevices.getUserMedia(defaultUserMediaConstraints);
+    await new Promise(r => setTimeout(r, 1000));
+    await stream.getVideoTracks()[0].applyConstraints(defaultVideoTrackConstraints);
+    ctx.stream = stream;
+    ctx.btn_start.dataset.alt = true;
+    ctx.btn_start.disabled = false;
+
+    ctx.btn_videoMute.dataset.alt = false;
+    ctx.btn_videoMute.disabled = false;
+    ctx.btn_audioMute.dataset.alt = false;
+    ctx.btn_audioMute.disabled = false;
+  };
+
+  //stream.getTracks().forEach(t => t.stop());
+  const stop = ctx => {
+    ctx.stream.getTracks().forEach(track => track.stop());
+    ctx.btn_start.dataset.alt = false;
+    
+    ctx.btn_start.disabled = false;
+    ctx.btn_videoMute.disabled = true;
+    ctx.btn_audioMute.disabled = true;
+  };
+
+  loop(
+    context,
+    [
+      ["init", init],
+      ["start", start],
+      ["stop", stop]
+    ],
+    "init");
+
+})();
 
 /*
 (async () => {
