@@ -30,7 +30,8 @@ const contentLoaded = new Promise(resolve => {
   const f = () => {
     resolve({
       document: {
-        getElementById: document.getElementById.bind(document)
+        getElementById: document.getElementById.bind(document),
+        $: document.getElementById.bind(document)
       },
       mediaDevices: {
         getUserMedia: navigator.mediaDevices.getUserMedia.bind(
@@ -79,65 +80,111 @@ const data = (() => {
   };
 })();
 
+const connect = async (
+  signal,
+  hubConnectedCallback
+) => {
+  if(signal.aborted){
+    return;
+  }
+  const auth = ($dbg.auth = await auth0);
+
+  if (signal.aborted) {
+    return;
+  }
+  const { hub, send: sendToHub } = await buildHubConnection({
+    serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
+    idTokenFactory: () => auth.getIdTokenClaims().then(x => x.__raw)
+  });
+
+  const connected = new Promise(resolve => {
+    hub.on("offer", async ({ from, sessionDescription }) => {
+      if(signal.aborted) {
+        resolve();
+        return;
+      }
+      const pc = ($dbg.pc = new LANPeerConnection());
+
+      const onConnected = () => {
+        if (pc.connectionState == "connected") {
+          pc.removeEventListener("connectionstatechange", onConnected);
+          resolve(pc);
+        }
+      };
+      pc.addEventListener("connectionstatechange", onConnected);
+
+      pc.send = sdp => {
+        return sendToHub({
+          Target: "answer",
+          Arguments: [
+            {
+              from: hub.connectionId,
+              sessionDescription: sdp
+            }
+          ],
+          ConnectionId: from
+        });
+      };
+
+      await pc.setRemoteDescription(sessionDescription);
+    });
+  });
+
+  if (signal.aborted) {
+    return;
+  }
+  await hub.start();
+  signal.addEventListener("abort", ()=>{
+    console.log("connection aborting");
+    hub.stop().then(_ => console.log("hub stoped"));
+  });
+  hubConnectedCallback();
+  return connected;
+};
+
 /* connection */
 (async () => {
-  const { document } = await contentLoaded;
+  const { document:doc } = await contentLoaded;
 
-  const context = (() => {
-    const button = document.getElementById("button_connection");
-    const connectionStatus = document.getElementById("connection");
-    return {
-      button,
-      writeStatus: text => {
-        connectionStatus.textContent = text;
-      }
-    };
+  const btn = doc.$("button_connection");
+  const writeStatus = (()=>{
+    const elem = doc.$("connection");
+    return text => elem.textContent = text;
   })();
 
-  const initializeHandler = (ctx, emit) => {
-    ctx.writeStatus("disconnected");
-    ctx.button.disabled = false;
-    ctx.button.dataset.command = "connect";
-    ctx.button.textContent = "connect";
-    ctx.button.addEventListener("click", ({ currentTarget: e }) => {
-      e.disabled = true;
-      emit(e.dataset.command);
-    });
-  };
+  let isDisconnected = true;
+  let ctrl; // AbortController
 
-  const connectHandler = ctx => {
-    /* 接続を開始する */
-    ctx.writeStatus("connecting");
-    ctx.button.disabled = false;
-    ctx.button.dataset.command = "disconnect";
-    ctx.button.textContent = "disconnect";
+  btn.addEventListener("click", ()=>{
+    // lockになると仮定する
+    btn.disabled = true;
+    
+    if (isDisconnected) {
+      writeStatus("connecting");
+      ctrl = new AbortController();
+      // fire and forget
+      (async ()=>{
+        const viewer = await connect(
+          ctrl.signal, 
+          () => writeStatus("pending"));
+        if (ctrl.signal.aborted) {
+          if (viewer) {
+            viewer.close();
+          }
+          return;
+        } 
+        writeStatus("connected");
+        console.log(viewer);
+      })();
+    } else {
+      ctrl.abort();
+      writeStatus("disconnected");
+    }
 
-    /* fire and forget */
-    /* キャンセル可能にする必要がある */
-    viewerConnected(
-      () => ctx.writeStatus("pending"),
-      () => ctx.writeStatus("connected")
-    ).then(pc => (data.pc = pc));
-  };
+    btn.dataset.alt = isDisconnected = !isDisconnected;
+    btn.disabled = false;
+  });
 
-  const disconnectHandler = ctx => {
-    ctx.writeStatus("disconnected");
-    ctx.button.disabled = false;
-    ctx.button.dataset.command = "connect";
-    ctx.button.textContent = "connect";
-
-    data.pc = null;
-  };
-
-  loop(
-    context,
-    [
-      ["initialize", initializeHandler],
-      ["connect", connectHandler],
-      ["disconnect", disconnectHandler]
-    ],
-    "initialize"
-  );
 })();
 
 const defaultUserMediaConstraints = {
