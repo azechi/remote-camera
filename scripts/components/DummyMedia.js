@@ -7,7 +7,7 @@ const template = `
 `;
 
 function doneCanplay(elem) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     if (elem.readyState >= 3) {
       resolve();
       return;
@@ -26,7 +26,7 @@ export default {
       mediaElement: document.createElement("video"),
       width: 0,
       height: 0,
-      src: "video.mp4"
+      src: "video.mp4",
     };
   },
   methods: {
@@ -41,7 +41,7 @@ export default {
       const stream = await elem.captureStream();
 
       this.$emit("start-media", stream);
-    }
+    },
   },
   created() {
     this.bus.$on("start", this.start);
@@ -55,5 +55,5 @@ export default {
     elem.src = this.src;
     // captureStreamのmutedではない、playerのmuted
     elem.muted = true;
-  }
+  },
 };

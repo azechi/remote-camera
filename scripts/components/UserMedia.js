@@ -12,7 +12,7 @@ export default {
       height: 300,
       audio: true,
       facingMode: "user",
-      frameRate: 15
+      frameRate: 15,
     };
   },
   methods: {
@@ -27,16 +27,16 @@ export default {
           facingMode: this.facingMode,
           width: this.width,
           height: this.height,
-          frameRate: this.frameRate
+          frameRate: this.frameRate,
         },
-        audio: this.audio
+        audio: this.audio,
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       this.$emit("start-media", stream);
-    }
+    },
   },
   created() {
     this.bus.$on("start", this.start);
-  }
+  },
 };

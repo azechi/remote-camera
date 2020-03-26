@@ -9,7 +9,7 @@ export default {
   props: ["id", "pc", "stream"],
   data() {
     return {
-      connectionState: ""
+      connectionState: "",
     };
   },
   watch: {
@@ -24,7 +24,7 @@ export default {
 
         //c.addEventListener('negotiationneeded', e => console.log(e));
 
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
           const h = () => {
             if (c.connectionState == "connected") {
               resolve();
@@ -36,7 +36,7 @@ export default {
         });
 
         this.$emit("connected", this.id, c);
-      }
-    }
-  }
+      },
+    },
+  },
 };

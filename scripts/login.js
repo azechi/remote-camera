@@ -9,12 +9,12 @@ export default (async () => {
   const auth = await createAuth0Client({
     domain: config.domain,
     client_id: config.clientId,
-    redirect_uri: url.origin + url.pathname
+    redirect_uri: url.origin + url.pathname,
   });
 
   if (
     ["code", "state"].every(Array.prototype.includes, [
-      ...url.searchParams.keys()
+      ...url.searchParams.keys(),
     ])
   ) {
     await auth.handleRedirectCallback();
@@ -26,7 +26,7 @@ export default (async () => {
   if (!(await auth.isAuthenticated())) {
     await auth.loginWithRedirect();
     // sso session があったら待ち時間がある
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       setTimeout(resolve, 1000 * 60);
     });
     throw "auth0 loginWithRedirect TIMEOUT";

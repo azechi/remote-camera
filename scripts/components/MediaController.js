@@ -23,13 +23,13 @@ export default {
   template,
   components: {
     DummyMedia,
-    UserMedia
+    UserMedia,
   },
   props: ["active", "id"],
   data() {
     return {
       useCamera: false,
-      bus: new Vue()
+      bus: new Vue(),
     };
   },
   methods: {
@@ -38,6 +38,6 @@ export default {
     },
     onStartMedia(stream) {
       this.$emit("set-media-stream", stream);
-    }
-  }
+    },
+  },
 };

@@ -25,7 +25,7 @@ async function getIdToken(refreshToken) {
 async function getTokenUsingRefreshToken(refreshToken) {
   const response = await callApi("token", {
     grant_type: "refresh_token",
-    refresh_token: refreshToken
+    refresh_token: refreshToken,
   });
 
   if (response.ok) {
@@ -37,7 +37,7 @@ async function getTokenUsingRefreshToken(refreshToken) {
 
 async function getDeviceCode(scope) {
   const response = await callApi("device/code", {
-    scope
+    scope,
   });
 
   if (response.ok) {
@@ -51,7 +51,7 @@ async function getTokenUsingDeviceCode(deviceCodeResponse) {
   while (true) {
     const response = await callApi("token", {
       device_code: deviceCodeResponse.device_code,
-      grant_type: "urn:ietf:params:oauth:grant-type:device_code"
+      grant_type: "urn:ietf:params:oauth:grant-type:device_code",
     });
 
     if (response.ok) {
@@ -62,7 +62,7 @@ async function getTokenUsingDeviceCode(deviceCodeResponse) {
       response.status == 403 &&
       (await response.json()).error == "authorization_pending"
     ) {
-      await new Promise(resolve =>
+      await new Promise((resolve) =>
         setTimeout(resolve, deviceCodeResponse.interval * 1000)
       );
       continue;
@@ -80,7 +80,7 @@ function callApi(endpointPath, data) {
     method: "POST",
     body: new URLSearchParams({
       client_id: clientId,
-      ...data
-    })
+      ...data,
+    }),
   });
 }

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <video id="video" autoplay muted controls playsinline></video>
+  
+    <script>
+      const video = document.getElementById("video");
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      video.srcObject = canvas.captureStream(0);
+      video.srcObject.getVideoTracks()[0].enabled = false;
+    </script>
+  </body>
+</html>

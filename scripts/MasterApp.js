@@ -41,13 +41,13 @@ export default {
     HubConnection,
     RemoteViewer,
     MediaController,
-    TrackController
+    TrackController,
   },
   data() {
     return {
       remoteViewers: [],
       mediaStream: new MediaStream(),
-      touch: {}
+      touch: {},
     };
   },
   created() {
@@ -66,29 +66,29 @@ export default {
       return this.remoteViewers.flatMap((v, i) =>
         i ? [{ separator: true }, v] : v
       );
-    }
+    },
   },
   methods: {
     updateTracks() {
       this.touch = {};
     },
-    onApplyTrackConstraints: function(id, constraints) {
+    onApplyTrackConstraints: function (id, constraints) {
       this.mediaStream.getTrackById(id).applyConstraints(constraints);
       this.updateTracks();
     },
-    onSetMediaStream: function(mediaStream) {
+    onSetMediaStream: function (mediaStream) {
       this.mediaStream = mediaStream;
     },
-    onReceiveOffer: function(remote) {
+    onReceiveOffer: function (remote) {
       /* remote {id, pc} */
-      if (!this.remoteViewers.some(x => x.id == remote.id)) {
+      if (!this.remoteViewers.some((x) => x.id == remote.id)) {
         this.remoteViewers.push(remote);
       }
     },
-    onPeerConnected: function(id, pc) {
+    onPeerConnected: function (id, pc) {
       this.mediaStream
         .getTracks()
-        .forEach(t => pc.addTrack(t, this.mediaStream));
+        .forEach((t) => pc.addTrack(t, this.mediaStream));
       pc.addEventListener("negotiationneeded", () => {
         console.log(pc);
       });
@@ -101,21 +101,21 @@ export default {
       const track = this.mediaStream.getTrackById(id);
       track.enabled = !track.enabled;
       this.updateTracks();
-    }
+    },
   },
   watch: {
     mediaStream: {
       handler(stream, oldValue) {
-        oldValue.getTracks().forEach(track => track.stop());
+        oldValue.getTracks().forEach((track) => track.stop());
         this.remoteViewers.forEach(({ pc }) =>
-          pc.getSenders().forEach(sender => pc.removeTrack(sender))
+          pc.getSenders().forEach((sender) => pc.removeTrack(sender))
         );
         stream
           .getTracks()
-          .forEach(track =>
+          .forEach((track) =>
             this.remoteViewers.forEach(({ pc }) => pc.addTrack(track, stream))
           );
-      }
-    }
-  }
+      },
+    },
+  },
 };

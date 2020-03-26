@@ -14,7 +14,7 @@ export default {
   computed: {
     ended() {
       return this.readyState == "ended";
-    }
+    },
   },
   methods: {
     apply() {
@@ -25,6 +25,6 @@ export default {
     },
     stop() {
       this.$emit("stop", this.id);
-    }
-  }
+    },
+  },
 };

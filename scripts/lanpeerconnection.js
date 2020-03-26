@@ -8,7 +8,7 @@ export class LANPeerConnection extends RTCPeerConnection {
     this.send = async () => {};
 
     this._signalingDataChannelOpenHandler = ({ target }) => {
-      this.send = async desc => {
+      this.send = async (desc) => {
         target.send(JSON.stringify(desc));
       };
 

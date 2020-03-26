@@ -3,7 +3,7 @@ import { LANPeerConnection } from "./lanpeerconnection.js";
 import { buildHubConnection } from "./hubconnection.js";
 
 async function loop(context, handlers, initialLabel) {
-  const listen = async function*() {
+  const listen = async function* () {
     let resolve;
 
     function emit(...args) {
@@ -12,7 +12,7 @@ async function loop(context, handlers, initialLabel) {
 
     yield [initialLabel, context, emit];
     while (true) {
-      yield [await new Promise(rslv => (resolve = rslv)), context];
+      yield [await new Promise((rslv) => (resolve = rslv)), context];
     }
   };
 
@@ -26,17 +26,17 @@ async function loop(context, handlers, initialLabel) {
   }
 }
 
-const contentLoaded = new Promise(resolve => {
+const contentLoaded = new Promise((resolve) => {
   const f = () => {
     resolve({
       document: {
-        getElementById: document.getElementById.bind(document)
+        getElementById: document.getElementById.bind(document),
       },
       mediaDevices: {
         getUserMedia: navigator.mediaDevices.getUserMedia.bind(
           navigator.mediaDevices
-        )
-      }
+        ),
+      },
     });
   };
 
@@ -57,8 +57,8 @@ const data = (() => {
     },
     set pc(val) {
       _pc = val;
-      new Promise(r => setTimeout(r, 1000)).then(_ => {
-        _stream.getTracks().forEach(track => {
+      new Promise((r) => setTimeout(r, 1000)).then((_) => {
+        _stream.getTracks().forEach((track) => {
           console.log(track);
           _pc.addTransceiver(track, { stream: _stream, direction: "sendonly" });
         });
@@ -69,13 +69,13 @@ const data = (() => {
     },
     set stream(val) {
       _stream = val;
-      _pc.getSenders().forEach(sender => {
+      _pc.getSenders().forEach((sender) => {
         const track = _stream
           .getTracks()
-          .find(track => track.kind == sender.track.kind);
+          .find((track) => track.kind == sender.track.kind);
         sender.replaceTrack(track);
       });
-    }
+    },
   };
 })();
 
@@ -88,9 +88,9 @@ const data = (() => {
     const connectionStatus = document.getElementById("connection");
     return {
       button,
-      writeStatus: text => {
+      writeStatus: (text) => {
         connectionStatus.textContent = text;
-      }
+      },
     };
   })();
 
@@ -105,7 +105,7 @@ const data = (() => {
     });
   };
 
-  const connectHandler = ctx => {
+  const connectHandler = (ctx) => {
     /* 接続を開始する */
     ctx.writeStatus("connecting");
     ctx.button.disabled = false;
@@ -117,10 +117,10 @@ const data = (() => {
     viewerConnected(
       () => ctx.writeStatus("pending"),
       () => ctx.writeStatus("connected")
-    ).then(pc => (data.pc = pc));
+    ).then((pc) => (data.pc = pc));
   };
 
-  const disconnectHandler = ctx => {
+  const disconnectHandler = (ctx) => {
     ctx.writeStatus("disconnected");
     ctx.button.disabled = false;
     ctx.button.dataset.command = "connect";
@@ -134,7 +134,7 @@ const data = (() => {
     [
       ["initialize", initializeHandler],
       ["connect", connectHandler],
-      ["disconnect", disconnectHandler]
+      ["disconnect", disconnectHandler],
     ],
     "initialize"
   );
@@ -142,13 +142,13 @@ const data = (() => {
 
 const defaultUserMediaConstraints = {
   video: true,
-  audio: true
+  audio: true,
 };
 
 const defaultVideoTrackConstraints = {
   frameRate: 15,
   aspectRatio: 1,
-  width: 300
+  width: 300,
 };
 
 /* user media */
@@ -167,7 +167,7 @@ const defaultVideoTrackConstraints = {
     set stream(val) {
       data.stream = val;
       this.video.srcObject = !(this.video.dataset.alt == "true") ? val : null;
-    }
+    },
   };
 
   const init = (ctx, emit) => {
@@ -198,7 +198,7 @@ const defaultVideoTrackConstraints = {
 
   const start = async (ctx, emit) => {
     const stream = await mediaDevices.getUserMedia(defaultUserMediaConstraints);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
     await stream
       .getVideoTracks()[0]
       .applyConstraints(defaultVideoTrackConstraints);
@@ -212,8 +212,8 @@ const defaultVideoTrackConstraints = {
     ctx.btn_audioMute.disabled = false;
   };
 
-  const stop = ctx => {
-    ctx.stream.getTracks().forEach(track => track.stop());
+  const stop = (ctx) => {
+    ctx.stream.getTracks().forEach((track) => track.stop());
     ctx.btn_start.dataset.alt = false;
 
     ctx.btn_start.disabled = false;
@@ -226,7 +226,7 @@ const defaultVideoTrackConstraints = {
     [
       ["init", init],
       ["start", start],
-      ["stop", stop]
+      ["stop", stop],
     ],
     "init"
   );
@@ -240,10 +240,10 @@ const viewerConnected = async (
 
   const { hub, send: sendToHub } = await buildHubConnection({
     serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
-    idTokenFactory: () => auth.getIdTokenClaims().then(x => x.__raw)
+    idTokenFactory: () => auth.getIdTokenClaims().then((x) => x.__raw),
   });
 
-  const connected = new Promise(resolve => {
+  const connected = new Promise((resolve) => {
     hub.on("offer", async ({ from, sessionDescription }) => {
       const pc = ($dbg.pc = new LANPeerConnection());
 
@@ -256,16 +256,16 @@ const viewerConnected = async (
       };
       pc.addEventListener("connectionstatechange", onConnected);
 
-      pc.send = sdp => {
+      pc.send = (sdp) => {
         return sendToHub({
           Target: "answer",
           Arguments: [
             {
               from: hub.connectionId,
-              sessionDescription: sdp
-            }
+              sessionDescription: sdp,
+            },
           ],
-          ConnectionId: from
+          ConnectionId: from,
         });
       };
 

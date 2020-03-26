@@ -7,7 +7,7 @@ const key = "Refresh Token";
 const storage = window.localStorage;
 let rt = storage.getItem(key);
 
-const contentLoaded = new Promise(resolve => {
+const contentLoaded = new Promise((resolve) => {
   if (document.readyState == "loading") {
     document.addEventListener("domcontentloaded", resolve);
   } else {
@@ -19,18 +19,20 @@ const { display, clear } = (() => {
   const a = document.createElement("a");
 
   return {
-    display: code => {
+    display: (code) => {
       a.href = code.verification_uri_complete;
       a.text = code.verification_uri_complete;
       document.getElementById("display").appendChild(a);
     },
-    clear: () => a.remove()
+    clear: () => a.remove(),
   };
 })();
 
 (async () => {
   if (!rt) {
-    rt = await getRefreshToken(code => contentLoaded.then(() => display(code)));
+    rt = await getRefreshToken((code) =>
+      contentLoaded.then(() => display(code))
+    );
     clear();
     storage.setItem(key, rt);
   }
@@ -39,7 +41,7 @@ const { display, clear } = (() => {
 
   const { hub, send: sendToHub } = await buildHubConnection({
     serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
-    idTokenFactory: () => idToken
+    idTokenFactory: () => idToken,
   });
 
   await contentLoaded;
@@ -47,17 +49,17 @@ const { display, clear } = (() => {
   const stream = new MediaStream();
   document.getElementById("video").srcObject = stream;
 
-  const connected = new Promise(resolve => {
+  const connected = new Promise((resolve) => {
     const pc = new LANPeerConnection();
 
-    pc.ontrack = e => {
+    pc.ontrack = (e) => {
       const track = e.track;
       stream.addTrack(track);
     };
 
     let flg = false;
 
-    pc.send = async sessionDescription => {
+    pc.send = async (sessionDescription) => {
       // polling
       while (!flg) {
         // broadcast
@@ -66,11 +68,11 @@ const { display, clear } = (() => {
           Arguments: [
             {
               from: hub.connectionId,
-              sessionDescription: sessionDescription
-            }
-          ]
+              sessionDescription: sessionDescription,
+            },
+          ],
         });
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise((r) => setTimeout(r, 2000));
       }
     };
 

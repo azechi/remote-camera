@@ -10,32 +10,32 @@ import auth0 from "../login.js";
 import { LANPeerConnection } from "../lanpeerconnection.js";
 import { buildHubConnection } from "../hubconnection.js";
 
-const gen = async vm => {
+const gen = async (vm) => {
   const auth = await auth0;
 
-  vm.userName = await auth.getIdTokenClaims().then(x => x.name);
+  vm.userName = await auth.getIdTokenClaims().then((x) => x.name);
 
   vm.state = "initialize";
   const { hub, send: sendToHub } = await buildHubConnection({
     serviceUrl: new URL("https://p1-azechify.azure-api.net/"),
-    idTokenFactory: () => auth.getIdTokenClaims().then(x => x.__raw)
+    idTokenFactory: () => auth.getIdTokenClaims().then((x) => x.__raw),
   });
 
   vm.state = "hub connecting...";
 
-  const connected = new Promise(resolve => {
+  const connected = new Promise((resolve) => {
     hub.on("offer", async ({ from, sessionDescription }) => {
       const pc = new LANPeerConnection();
-      pc.send = async sessionDescription => {
+      pc.send = async (sessionDescription) => {
         await sendToHub({
           Target: "answer",
           Arguments: [
             {
               from: hub.connectionId,
-              sessionDescription: sessionDescription
-            }
+              sessionDescription: sessionDescription,
+            },
           ],
-          ConnectionId: from
+          ConnectionId: from,
         });
       };
 
@@ -54,10 +54,10 @@ export default {
   data() {
     return {
       userName: undefined,
-      state: ""
+      state: "",
     };
   },
   created() {
     gen(this);
-  }
+  },
 };
