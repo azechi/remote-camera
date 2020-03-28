@@ -197,12 +197,25 @@ const defaultVideoTrackConstraints = {
   };
 
   const start = async (ctx, emit) => {
-    const stream = await mediaDevices.getUserMedia(defaultUserMediaConstraints);
+    const ori_stream = await mediaDevices.getUserMedia(defaultUserMediaConstraints);
+    
+    const audioCtx = new AudioContext();
+    const src = audioCtx.createMediaStreamSource(ori_stream);
+    const filter = audioCtx.createBiquadFilter();
+    const dest = audioCtx.createMediaStreamDestination();
+    const stream = dest.stream;
+    ori_stream.getVideoTracks().forEach(t => stream.addTrack(t));
+
+    src.connect(filter);
+    filter.connect(dest);
+    filter.frequency.value = 800;
+
+
     await new Promise((r) => setTimeout(r, 1000));
     await stream
       .getVideoTracks()[0]
       .applyConstraints(defaultVideoTrackConstraints);
-    ctx.stream = stream;
+    ctx.stream = dest.stream;
     ctx.btn_start.dataset.alt = true;
     ctx.btn_start.disabled = false;
 
